@@ -34,7 +34,7 @@ button = st.button("Analyse")
 if yt_id != 0 and button:
     try:
         transcript = YouTubeTranscriptApi.get_transcript(yt_id)
-    except Exception as e
+    except Exception as e:
         print(e)
         transcript = None
         st.error("The youtube video you entered is invalid, it's possible that the video does not have a transcript available or the URL is incorrect.")
