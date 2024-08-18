@@ -1,11 +1,11 @@
 import streamlit as st
 
 # Labelling
-st.sidebar.markdown("# Swiss Army Summaries 🛸")
+st.sidebar.markdown("# Swiss Tech Summaries 🏔️")
 st.sidebar.markdown("Feel free to navigate through the different pages, choose your input and let the magic happen!")
-st.title("Home 🛸")
+st.title("Swiss Tech 🏔️")
 st.write("***")
-st.write("## Welome to the Swiss Army Knife of summarising media options! Select an option for your input below to get started.")
+st.write("## Welcome to the Swiss Army Knife of summarising media options! Select an option for your input below to get started.")
 st.write("")
 
 col1, col2, col3, col4, col5 = st.columns(5)
