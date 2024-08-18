@@ -30,7 +30,7 @@ def change_state():
 
 uploaded_file = st.file_uploader("Upload a PDF file to analyse the text contents", type="pdf")
 
-if uploaded_file.name:
+if uploaded_file:
     change_state()
 
 button = st.button("Analyse")
