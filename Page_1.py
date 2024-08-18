@@ -68,7 +68,7 @@ if yt_id != 0 and button and st.session_state.video == True:
 if st.session_state.summary:
     st.write(st.session_state.summary)
 
-q = st.text_input("Do you have any questions about the PDF?")
+q = st.text_input("Do you have any questions about the youtube video?")
 button = st.button("Ask")
 
 if q and st.session_state.text and button:
