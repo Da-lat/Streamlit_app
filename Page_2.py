@@ -26,7 +26,7 @@ def extract_text_from_pdf(pdf):
 
 def change_state():
     st.session_state['pdf'] = True
-    if uploaded_file == True:
+    if uploaded_file:
         st.success("File uploaded successfully! Click analyse when you are ready.")
 
 uploaded_file = st.file_uploader("Upload a PDF file to analyse the text contents", type="pdf", on_change=change_state)
