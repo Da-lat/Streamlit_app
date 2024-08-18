@@ -1,6 +1,6 @@
 import streamlit as st
 
-home_page = st.Page("Page_0.py", title="Home", icon=":house:")
+home_page = st.Page("Page_0.py", title="Home", icon=":material/house:")
 yt_page = st.Page("Page_1.py", title="Youtube Analysis", icon=":material/add_circle:")
 pdf_page = st.Page("Page_2.py", title="PDF Analysis", icon=":material/delete:")
 url_page = st.Page("Page_3.py", title="URL Analysis", icon=":material/insert_link:")
