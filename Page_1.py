@@ -20,9 +20,9 @@ st.set_page_config(
 # State initialisation
 if 'video' not in st.session_state:
     st.session_state['video'] = False
-    st.session_state['text'] = None
-    st.session_state['summary'] = None
-    st.session_state['answer'] = None
+    st.session_state['yt_text'] = None
+    st.session_state['yt_summary'] = None
+    st.session_state['yt_answer'] = None
 
 # Labelling
 st.sidebar.markdown("# Youtube Video Analysis 🎈")
@@ -65,21 +65,21 @@ if yt_id != 0 and button and st.session_state.video == True:
         
     if transcript_str:
         response = model.generate_content("Here is a youtube transcript, please summarize the transript into bullet points and provide a summary, act as if you are studying and you went through thr video and took notes to learn and extract the key points. Here is the transcript: " + transcript_str)
-        st.session_state.text = transcript_str
-        st.session_state.summary = response.text
-        st.session_state.answer = None
+        st.session_state.yt_text = transcript_str
+        st.session_state.yt_summary = response.text
+        st.session_state.yt_answer = None
 
-if st.session_state.summary:
-    st.write(st.session_state.summary)
-    st.download_button("Download your summarised youtube video text", st.session_state.summary, file_name="youtube_summary.pdf")
+if st.session_state.yt_summary:
+    st.write(st.session_state.yt_summary)
+    st.download_button("Download your summarised youtube video text", st.session_state.yt_summary, file_name="youtube_summary.txt")
 
 
 q = st.text_input("Do you have any questions about the youtube video?")
 button = st.button("Ask")
 
-if q and st.session_state.text and button:
+if q and st.session_state.yt_text and button:
     response = model.generate_content(f"I am providing an extracted text passage from a youtube transcript, please search this information and answer this question. Youtube transcript: {st.session_state.text}. Question: {q}")
-    st.session_state.answer = response.text
+    st.session_state.yt_answer = response.text
 
-if st.session_state.answer:
-    st.write(st.session_state.answer)
+if st.session_state.yt_answer:
+    st.write(st.session_state.yt_answer)

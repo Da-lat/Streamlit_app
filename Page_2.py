@@ -11,9 +11,9 @@ model = genai.GenerativeModel(config.MODEL)
 # State initialisation
 if 'pdf' not in st.session_state:
     st.session_state['pdf'] = False
-    st.session_state['text'] = None
-    st.session_state['summary'] = None
-    st.session_state['answer'] = None
+    st.session_state['pdf_text'] = None
+    st.session_state['pdf_summary'] = None
+    st.session_state['pdf_answer'] = None
 
 # Labelling
 st.markdown("# PDF Analysis ❄️")
@@ -40,23 +40,23 @@ try:
     if uploaded_file and button and st.session_state.pdf == True:
         text = extract_text_from_pdf(uploaded_file)
         response = model.generate_content("Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: " + text)
-        st.session_state.text = text
-        st.session_state.summary = response.text
-        st.session_state.answer = None
+        st.session_state.pdf_text = text
+        st.session_state.pdf_summary = response.text
+        st.session_state.pdf_answer = None
 except:
     st.error("Invalid file, please try again")
 
-if st.session_state.summary:
-    st.write(st.session_state.summary)
-    st.download_button("Download your summarised PDF text", st.session_state.summary, file_name="PDF_summary.pdf")
+if st.session_state.pdf_summary:
+    st.write(st.session_state.pdf_summary)
+    st.download_button("Download your summarised PDF text", st.session_state.pdf_summary, file_name="PDF_summary.txt")
 
 
 q = st.text_input("Do you have any questions about the PDF?")
 button = st.button("Ask")
 
-if q and st.session_state.text and button:
-    response = model.generate_content(f"I am providing an extracted text passage from a pdf file, please search this information and answer this question. PDF text: {st.session_state.text}. Question: {q}")
-    st.session_state.answer = response.text
+if q and st.session_state.pdf_text and button:
+    response = model.generate_content(f"I am providing an extracted text passage from a pdf file, please search this information and answer this question. PDF text: {st.session_state.pdf_text}. Question: {q}")
+    st.session_state.pdf_answer = response.text
 
-if st.session_state.answer:
-    st.write(st.session_state.answer)
+if st.session_state.pdf_answer:
+    st.write(st.session_state.pdf_answer)
