@@ -6,6 +6,7 @@ st.sidebar.markdown("Feel free to navigate through the different pages, choose y
 st.title("Home 🛸")
 st.write("***")
 st.write("## Welome to the Swiss Army Knife of summarising media options! Select an option for your input below to get started.")
+st.write("")
 
 col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -27,7 +28,7 @@ with col5:
     st.page_link("Page_5.py", label="Text", icon="🔤")
 
 st.write("***")
-st.write("## Contact me if you have any questions or isses, you can find me here!")
+st.write("### Contact me if you have any questions or issues, you can find me here!")
 st.write("***")
 # Social links
 
