@@ -25,10 +25,9 @@ def extract_text_from_pdf(pdf):
     return ''.join(page.extract_text() for page in pdf_reader.pages)
 
 def change_state():
-    st.session_state['pdf'] = True
-    if uploaded_file:
+    if uploaded_file.name:
         st.success("File uploaded successfully! Click analyse when you are ready.")
-
+        st.session_state['pdf'] = True
 uploaded_file = st.file_uploader("Upload a PDF file to analyse the text contents", type="pdf", on_change=change_state)
 
 button = st.button("Analyse")
