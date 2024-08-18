@@ -46,4 +46,10 @@ with col5:
 
 # Donate
 st.write("Everything is free to use here, if you are enjoying using this app, please consider making a donation. It would be greatly appreciated and will support upkeep fees")
-st.markdown("<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Buy Me a Coffee', '#1a78a3', 'Y8Y312122A');kofiwidget2.draw();</script> ", unsafe_allow_html=True))
+st.markdown(
+        """
+    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>
+    kofiwidget2.init('Buy Me a Coffee', '#1a78a3', 'Y8Y312122A');kofiwidget2.draw();</script> 
+    """,
+         unsafe_allow_html=True,
+)
