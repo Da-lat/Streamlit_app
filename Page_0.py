@@ -7,6 +7,7 @@ st.title("Home 🛸")
 st.write("Welome to the Swiss Army Knife of summarising media options!")
 
 col1, col2, col3, col4, col5 = st.columns(5)
+st.write("***")
 
 # Navigation links
 with col1:
@@ -25,6 +26,7 @@ with col5:
     st.image("https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     st.page_link("Page_5.py", label="Text Analysis", icon="🔤")
 
+st.write("***")
 st.write("## Contact me if you have any questions or isses, you can find me here!")
 st.write("***")
 # Social links
@@ -48,6 +50,7 @@ with col10:
     st.page_link("https://elegancegroup.co.nz/", label="Elegance Group", icon="5️⃣")
 
 # Donate
+st.write("***")
 st.write("Everything is free to use here forever, if you are enjoying using this app, please consider making a donation. It would be greatly appreciated and will support upkeep fees.")
 st.markdown(
         """
