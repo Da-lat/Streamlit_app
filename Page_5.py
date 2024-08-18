@@ -7,8 +7,8 @@ api_key = config.API_KEY
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(config.MODEL)
 
-st.markdown("# Text Analysis 💻")
-st.sidebar.markdown("# Text Analysis 💻")
+st.markdown("# Text Analysis 🔤")
+st.sidebar.markdown("# Text Analysis 🔤")
 st.sidebar.markdown("Here you can paste text and analyse it into key points to save time and make it more readable.")
 
 text = st.text_area("Enter the text you want to analyse:")

@@ -16,8 +16,8 @@ if 'pdf' not in st.session_state:
     st.session_state['pdf_answer'] = None
 
 # Labelling
-st.markdown("# PDF Analysis ❄️")
-st.sidebar.markdown("# PDF Analysis ❄️")
+st.markdown("# PDF Analysis 📄")
+st.sidebar.markdown("# PDF Analysis 📄")
 st.sidebar.markdown("Here you can upload a PDF file and analyse the text contents into key points to save time and make it more readable.")
 
 def extract_text_from_pdf(pdf): 

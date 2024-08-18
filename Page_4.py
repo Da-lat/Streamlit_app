@@ -11,8 +11,8 @@ api_key = config.API_KEY
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(config.MODEL)
 
-st.markdown("# CSV Analysis 💻")
-st.sidebar.markdown("# CSV Analysis 💻")
+st.markdown("# CSV Analysis 📈")
+st.sidebar.markdown("# CSV Analysis 📈")
 st.sidebar.markdown("Here you can upload a CSV file and analyse the contents in a dataframe with visualisations.")
 
 csv_upload = st.file_uploader("Upload a CSV file to analyse the contents", type="csv")
