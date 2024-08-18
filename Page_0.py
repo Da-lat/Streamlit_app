@@ -9,6 +9,7 @@ st.write("Welome to the Swiss Army Knife of summarising media options!")
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
+    st.image("https://images.unsplash.com/photo-1611162616475-46b635cb6868?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     st.page_link("Page_1.py", label="Youtube", icon="🎈")
 with col2:
     st.page_link("Page_2.py", label="PDF", icon="📄")
