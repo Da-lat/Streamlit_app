@@ -13,7 +13,7 @@ with col1:
 with col2:
     st.page_link("Page_2.py", label="PDF", icon="📄")
 with col3:
-    st.page_link("Page_3.py", label="URL", icon="💻", disabled=True)
+    st.page_link("Page_3.py", label="URL", icon="💻")
 with col4:
     st.page_link("Page_4.py", label="CSV", icon="📈")
 with col5:
