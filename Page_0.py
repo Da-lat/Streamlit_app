@@ -38,7 +38,7 @@ with col3:
     st.image("https://images.unsplash.com/photo-1596526131083-e8c633c948d2?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     st.page_link("https://www.linkedin.com/newsletters/7170962682852859904/", label="My Newsletter", icon="3️⃣")
 with col4:
-    st.image("https://images.unsplash.com/photo-1560472354-b33ff0c44a43?q=80&w=2151&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_column_width="auto")
+    st.image("https://images.unsplash.com/photo-1666875753105-c63a6f3bdc86?q=80&w=2073&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", use_column_width="auto")
     st.page_link("https://public.tableau.com/app/profile/brandon.davies/vizzes", label="Tableau", icon="4️⃣")
 with col5:
     st.image("https://media.licdn.com/dms/image/D560BAQGChCB_hK7nQw/company-logo_200_200/0/1719257926517/elegance_group_nz_logo?e=2147483647&v=beta&t=PIoQsPcECJd4wAHkUugj4NygaUp1J-ooy-9dYJ_AKgM")
