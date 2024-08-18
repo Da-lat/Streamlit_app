@@ -17,12 +17,14 @@ st.set_page_config(
         page_icon="🎈",
 )
 
+# State initialisation
 if 'video' not in st.session_state:
     st.session_state['video'] = False
     st.session_state['text'] = None
     st.session_state['summary'] = None
     st.session_state['answer'] = None
 
+# Labelling
 st.sidebar.markdown("# Youtube Video Analysis 🎈")
 st.sidebar.markdown("Here you can upload a Youtube URL and analyse the transcript into key points to save time and make it more readable.")
 st.title("Youtube Video Analysis Tool 🎈")
@@ -47,6 +49,7 @@ if yt_video:
 
 button = st.button("Analyse")
 
+# Extract transcript and generate string, send to gemini and summarise, also modifies the state
 if yt_id != 0 and button and st.session_state.video == True:
     try:
         transcript = YouTubeTranscriptApi.get_transcript(yt_id)

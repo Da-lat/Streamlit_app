@@ -8,15 +8,17 @@ api_key = config.API_KEY
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel(config.MODEL)
 
-st.markdown("# PDF Analysis ❄️")
-st.sidebar.markdown("# PDF Analysis ❄️")
-st.sidebar.markdown("Here you can upload a PDF file and analyse the text contents into key points to save time and make it more readable.")
-
+# State initialisation
 if 'pdf' not in st.session_state:
     st.session_state['pdf'] = False
     st.session_state['text'] = None
     st.session_state['summary'] = None
     st.session_state['answer'] = None
+
+# Labelling
+st.markdown("# PDF Analysis ❄️")
+st.sidebar.markdown("# PDF Analysis ❄️")
+st.sidebar.markdown("Here you can upload a PDF file and analyse the text contents into key points to save time and make it more readable.")
 
 def extract_text_from_pdf(pdf): 
     pdf_reader = PdfReader(pdf) 
@@ -30,7 +32,7 @@ uploaded_file = st.file_uploader("Upload a PDF file to analyse the text contents
 
 button = st.button("Analyse")
 
-# creating a pdf file object 
+# creating a pdf file object, extacts text and modifies the state
 try:
     if uploaded_file and button and st.session_state.pdf == True:
         text = extract_text_from_pdf(uploaded_file)
