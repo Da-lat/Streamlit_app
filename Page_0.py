@@ -26,6 +26,7 @@ with col5:
     st.page_link("Page_5.py", label="Text Analysis", icon="🔤")
 
 st.write("## Contact me if you have any questions or isses, you can find me here!")
+st.write("***")
 # Social links
 
 col6, col7, col8, col9, col10 = st.columns(5)
