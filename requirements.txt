@@ -6,4 +6,3 @@ pandas
 matplotlib
 config
 bs4
-streamlit-navigation-bar
