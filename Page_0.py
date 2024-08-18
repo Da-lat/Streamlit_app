@@ -25,10 +25,10 @@ with col5:
     st.image("https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     st.page_link("Page_5.py", label="Text", icon="🔤")
 
-col1.st.write("Contact me if you have any questions or isses, you can find me here!")
 # Social links
 
 with col1:
+    st.write("Contact me if you have any questions or isses, you can find me here!")
     st.image("https://images.unsplash.com/photo-1611944212129-29977ae1398c?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D")
     st.page_link("https://www.linkedin.com/in/brandon-davies-cs/", label="LinkedIn", icon="1️⃣")
 with col2:
