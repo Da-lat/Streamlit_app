@@ -6,7 +6,7 @@ st.sidebar.markdown("Feel free to navigate through the different pages, choose y
 st.title("Home 🛸")
 st.write("Welome to the Swiss Army Knife of summarising media options!")
 
-col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns(5)
+col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns(10)
 
 # Navigation links
 with col1:
