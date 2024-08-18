@@ -45,11 +45,12 @@ with col5:
     st.page_link("https://elegancegroup.co.nz/", label="Elegance Group", icon="5️⃣")
 
 # Donate
-st.write("Everything is free to use here, if you are enjoying using this app, please consider making a donation. It would be greatly appreciated and will support upkeep fees")
+st.write("Everything is free to use here forever, if you are enjoying using this app, please consider making a donation. It would be greatly appreciated and will support upkeep fees.")
 st.markdown(
         """
-    <script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>
-    kofiwidget2.init('Buy Me a Coffee', '#1a78a3', 'Y8Y312122A');kofiwidget2.draw();</script> 
+    <a href='https://ko-fi.com/Y8Y312122A' target='_blank'><img height='36' style='border:0px;height:36px;' 
+    src='https://storage.ko-fi.com/cdn/kofi2.png?v=3' border='0' 
+    alt='Buy Me a Coffee at ko-fi.com' /></a>
     """,
          unsafe_allow_html=True,
 )
