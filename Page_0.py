@@ -43,3 +43,7 @@ with col4:
 with col5:
     st.image("https://media.licdn.com/dms/image/D560BAQGChCB_hK7nQw/company-logo_200_200/0/1719257926517/elegance_group_nz_logo?e=2147483647&v=beta&t=PIoQsPcECJd4wAHkUugj4NygaUp1J-ooy-9dYJ_AKgM")
     st.page_link("https://elegancegroup.co.nz/", label="Elegance Group", icon="5️⃣")
+
+# Donate
+st.write("Everything is free to use here, if you are enjoying using this app, please consider making a donation. It would be greatly appreciated and will support upkeep fees")
+st.markdown("<script type='text/javascript' src='https://storage.ko-fi.com/cdn/widget/Widget_2.js'></script><script type='text/javascript'>kofiwidget2.init('Buy Me a Coffee', '#1a78a3', 'Y8Y312122A');kofiwidget2.draw();</script> ", unsafe_allow_html=True))
