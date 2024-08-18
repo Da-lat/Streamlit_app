@@ -78,7 +78,7 @@ q = st.text_input("Do you have any questions about the youtube video?")
 button = st.button("Ask")
 
 if q and st.session_state.yt_text and button:
-    response = model.generate_content(f"I am providing an extracted text passage from a youtube transcript, please search this information and answer this question. Youtube transcript: {st.session_state.text}. Question: {q}")
+    response = model.generate_content(f"I am providing an extracted text passage from a youtube transcript, please search this information and answer this question. Youtube transcript: {st.session_state.yt_text}. Question: {q}")
     st.session_state.yt_answer = response.text
 
 if st.session_state.yt_answer:
