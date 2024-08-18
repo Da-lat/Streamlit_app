@@ -6,7 +6,7 @@ st.sidebar.markdown("Feel free to navigate through the different pages, choose y
 st.title("Home 🛸")
 st.write("Welome to the Swiss Army Knife of summarising media options!")
 
-col1, col2, col3, col4, col5, col6, col7, col8, col9, col10 = st.columns(5)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 # Navigation links
 with col1:
@@ -40,8 +40,6 @@ with col3:
 with col4:
     st.image("https://live.staticflickr.com/974/41425693524_d73d3db449_w.jpg")
     st.page_link("https://public.tableau.com/app/profile/brandon.davies/vizzes", label="Tableau", icon="5️⃣")
-    st.image("https://media.licdn.com/dms/image/D560BAQGChCB_hK7nQw/company-logo_200_200/0/1719257926517/elegance_group_nz_logo?e=2147483647&v=beta&t=PIoQsPcECJd4wAHkUugj4NygaUp1J-ooy-9dYJ_AKgM")
-    st.page_link("https://elegancegroup.co.nz/", label="Elegance Group", icon="4️⃣")
 with col5:
     st.image("https://media.licdn.com/dms/image/D560BAQGChCB_hK7nQw/company-logo_200_200/0/1719257926517/elegance_group_nz_logo?e=2147483647&v=beta&t=PIoQsPcECJd4wAHkUugj4NygaUp1J-ooy-9dYJ_AKgM")
     st.page_link("https://elegancegroup.co.nz/", label="Elegance Group", icon="5️⃣")
