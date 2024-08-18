@@ -50,6 +50,7 @@ button = st.button("Analyse")
 if yt_id != 0 and button and st.session_state.video == True:
     try:
         transcript = YouTubeTranscriptApi.get_transcript(yt_id)
+        st.success("Transcript extracted successfully!")
     except Exception as e:
         print(e)
         transcript = None
@@ -58,7 +59,7 @@ if yt_id != 0 and button and st.session_state.video == True:
         transcript_str = ""   
         for item in transcript:
             transcript_str = transcript_str + item['text'] + " "
-        # st.write(transcript_str)
+        
     if transcript_str:
         response = model.generate_content("Here is a youtube transcript, please summarize the transript into bullet points and provide a summary, act as if you are studying and you went through thr video and took notes to learn and extract the key points. Here is the transcript: " + transcript_str)
         st.session_state.text = transcript_str
