@@ -13,7 +13,8 @@ if 'pdf' not in st.session_state:
     st.session_state['pdf'] = False
     st.session_state['pdf_text'] = None
     st.session_state['pdf_summary'] = None
-    st.session_state['pdf_answer'] = None
+    st.session_state.pdf_answer = []
+    st.session_state['pdf_q'] = []
 
 # Labelling
 st.markdown("# PDF Analysis 📄")
@@ -42,7 +43,7 @@ try:
         response = model.generate_content("Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: " + text)
         st.session_state.pdf_text = text
         st.session_state.pdf_summary = response.text
-        st.session_state.pdf_answer = None
+        st.session_state.pdf_answer = []
 except:
     st.error("Invalid file, please try again")
 
@@ -50,13 +51,15 @@ if st.session_state.pdf_summary:
     st.write(st.session_state.pdf_summary)
     st.download_button("Download your summarised PDF text", st.session_state.pdf_summary, file_name="PDF_summary.txt")
 
+q = st.chat_input("Do you have any questions about the PDF?")
+messages = st.container()
 
-q = st.text_input("Do you have any questions about the PDF?")
-button = st.button("Ask")
-
-if q and st.session_state.pdf_text and button:
+if q and st.session_state.pdf_text:
     response = model.generate_content(f"I am providing an extracted text passage from a pdf file, please search this information and answer this question. PDF text: {st.session_state.pdf_text}. Question: {q}")
-    st.session_state.pdf_answer = response.text
+    st.session_state.pdf_answer.append({"role": "user", "content":q})  
+    st.session_state.pdf_answer.append({"role": "assistant", "content": response.text})
 
 if st.session_state.pdf_answer:
-    st.write(st.session_state.pdf_answer)
+    for message in st.session_state.pdf_answer:
+        with messages.chat_message(message["role"]):
+            st.write(message["content"])
