@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 import config
+import time
 
 # Gemini config
 api_key = config.API_KEY
@@ -15,6 +16,8 @@ text = st.text_area("Enter the text you want to analyse:")
 button = st.button("Analyse")
 
 if text and button:
+    with st.spinner('Wait for it...'):
+        time.sleep(5)
     response = model.generate_content(f"Here is a passage of text, please summarize the transript into bullet points and provide a summary, act as if you are studying and you read through this passage and took notes to learn and extract the key points. Here is the passage: " + text)
     st.write(response.text)
 

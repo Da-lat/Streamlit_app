@@ -2,6 +2,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 import google.generativeai as genai
 import config
+import time
 
 # Gemini config
 api_key = config.API_KEY
@@ -39,6 +40,8 @@ button = st.button("Analyse")
 # creating a pdf file object, extacts text and modifies the state
 try:
     if uploaded_file and button and st.session_state.pdf == True:
+        with st.spinner('Wait for it...'):
+            time.sleep(5)
         text = extract_text_from_pdf(uploaded_file)
         response = model.generate_content("Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: " + text)
         st.session_state.pdf_text = text

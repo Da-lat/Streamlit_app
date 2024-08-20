@@ -5,7 +5,7 @@ from youtube_transcript_api.formatters import TextFormatter
 import config
 import google.generativeai as genai
 import PyPDF2
-
+import time
 
 # Gemini config
 api_key = config.API_KEY
@@ -59,6 +59,8 @@ if yt_id != 0 and button and st.session_state.video == True:
         transcript = None
         st.error("The youtube video you entered is invalid, it's possible that the video does not have a transcript available or the URL is incorrect.")
     if transcript: 
+        with st.spinner('Wait for it...'):
+            time.sleep(5)
         transcript_str = ""   
         for item in transcript:
             transcript_str = transcript_str + item['text'] + " "
