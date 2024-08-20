@@ -16,7 +16,7 @@ text = st.text_area("Enter the text you want to analyse:")
 button = st.button("Analyse")
 
 if text and button:
-    with st.spinner('Wait for it...'):
+    with st.spinner('Processing your text...'):
         time.sleep(5)
     response = model.generate_content(f"Here is a passage of text, please summarize the transript into bullet points and provide a summary, act as if you are studying and you read through this passage and took notes to learn and extract the key points. Here is the passage: " + text)
     st.write(response.text)

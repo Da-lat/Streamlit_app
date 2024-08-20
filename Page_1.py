@@ -59,7 +59,7 @@ if yt_id != 0 and button and st.session_state.video == True:
         transcript = None
         st.error("The youtube video you entered is invalid, it's possible that the video does not have a transcript available or the URL is incorrect.")
     if transcript: 
-        with st.spinner('Wait for it...'):
+        with st.spinner('Analysing the transcript...'):
             time.sleep(5)
         transcript_str = ""   
         for item in transcript:

@@ -40,7 +40,7 @@ button = st.button("Analyse")
 # creating a pdf file object, extacts text and modifies the state
 try:
     if uploaded_file and button and st.session_state.pdf == True:
-        with st.spinner('Wait for it...'):
+        with st.spinner('Analysing the PDF...'):
             time.sleep(5)
         text = extract_text_from_pdf(uploaded_file)
         response = model.generate_content("Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: " + text)
