@@ -8,3 +8,4 @@ config
 bs4
 requests
 pillow
+IPython
