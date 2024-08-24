@@ -11,10 +11,10 @@ from io import BytesIO
 if "cover" not in st.session_state:
     st.session_state['cover'] = None
 
-st.markdown("# Experimental ")
-st.sidebar.markdown("# Experimental ")
-st.sidebar.markdown("Experimental")
-
+st.markdown("# Video Game Covers ")
+st.sidebar.markdown("# Video Game Covers ")
+st.sidebar.markdown("Video Game Covers for some nostalgia")
+st.write("Refresh the page for a new cover art")
 # IGDB API config
 
 if st.session_state['cover'] == None:
