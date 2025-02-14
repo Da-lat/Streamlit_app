@@ -8,7 +8,8 @@ csv_page = st.Page("Page_4.py", title="CSV Analysis", icon=":material/import_con
 text_page = st.Page("Page_5.py", title="Text Analysis", icon=":material/insert_drive_file:")
 video_game_covers = st.Page("Page_6.py", title="Video Game Covers", icon=":material/thumb_up:")
 timezones = st.Page("Page_7.py", title="Timezone Converter", icon=":material/schedule:")
+news = st.Page("Page_8.py", title="Worldwide News", icon=":material/email:")
 
-pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, timezones])
+pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, timezones, news])
 
 pg.run()

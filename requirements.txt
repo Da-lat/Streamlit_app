@@ -9,3 +9,4 @@ bs4
 requests
 pillow
 IPython
+newsapi-pythonnewsapi-python
