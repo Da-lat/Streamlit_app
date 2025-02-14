@@ -3,14 +3,14 @@ import requests
 from datetime import datetime
 from newsapi import NewsApiClient
 
-st.markdown("# Worldwide news 📆")
-st.sidebar.markdown("# Worldwide news 📆")
+st.markdown("# Worldwide news 🗞️")
+st.sidebar.markdown("# Worldwide news 🗞️")
 st.sidebar.markdown("Here you can select some categories and find the top headlines.")
 
 newsapi = NewsApiClient(api_key='c97f53b4282741fc96b019c2c8a31f6f')
 
-categories = ["Health", "Sports", "Business", "Entertainment", "General", "Science", "Technology"]
-category = st.pills("Category",categories, selection_mode="single")
+categories = ["General", "Sports", "Business", "Entertainment", "Health", "Science", "Technology"]
+category = st.pills("Category",options=categories, selection_mode="single", default="General")
 category = category.lower()
 
 layout = st.selectbox(label="Select your layout of the news", options=["Detailed", "Title and URL"])
