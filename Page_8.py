@@ -10,7 +10,7 @@ st.sidebar.markdown("Here you can select some categories and find the top headli
 newsapi = NewsApiClient(api_key='c97f53b4282741fc96b019c2c8a31f6f')
 
 categories = ["Health", "Sports", "Business", "Entertainment", "General", "Science", "Technology"]
-category = st.selectbox(label="Category",options=categories)
+category = st.pills("Category",categories, selection_mode="single")
 category = category.lower()
 
 layout = st.selectbox(label="Select your layout of the news", options=["Detailed", "Title and URL"])
