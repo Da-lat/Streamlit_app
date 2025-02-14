@@ -24,7 +24,11 @@ if layout == "Detailed":
         st.text(f"{article['source']['name']} {datetime.strptime(article['publishedAt'], '%Y-%m-%dT%H:%M:%SZ').strftime('%d/%m/%Y')}") 
         st.write(article["description"])
         st.link_button(label="Full Article", url=article["url"])
-        st.image(article["urlToImage"])
+        try:
+            st.image(article["urlToImage"])
+        except:
+            st.write("No image found or invalid format")
+
 elif layout == "Title and URL":
     for article in top_headlines["articles"]:
         st.write(article["title"]) 
