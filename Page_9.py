@@ -17,7 +17,7 @@ top = "Aatrox,Akali,Ambessa,Aurora,Camille,Cassiopeia,Chogath,Darius,DrMundo,Fio
 jung = "Amumu,Belveth,Brand,Briar,Darius,Diana,DrMundo,Ekko,Elise,Evelynn,Fiddlesticks,Gragas,Graves,Gwen,Hecarim,Ivern,JarvanIV,Jax,Karthus,Kayn,Khazix,Kindred,LeeSin,Lillia,MasterYi,Naafiri,Nidalee,Nocturne,Nunu,Pantheon,Poppy,Qiyana,Rammus,RekSai,Rengar,Sejuani,Shaco,Shyvana,Skarner,Taliyah,Talon,Trundle,Udyr,Vi,Viego,Volibear,Warwick,MonkeyKing,XinZhao,Yorick,Zac,Zed,Zyra"
 mid = "Ahri,Akali,Akshan,Anivia,Annie,AurelionSol,Aurora,Azir,Brand,Cassiopeia,Chogath,Corki,Diana,Ekko,Fizz,Galio,Garen,Gragas,Hwei,Irelia,Jayce,Kassadin,Katarina,Kayle,Kennen,Leblanc,Lissandra,Lux,Malphite,Malzahar,Mel,Naafiri,Neeko,Orianna,Pantheon,Qiyana,Quinn,Ryze,Smolder,Swain,Sylas,Syndra,Taliyah,Talon,Tristana,TwistedFate,Veigar,Velkoz,Vex,Viktor,Vladimir,Xerath,Yasuo,Yone,Zed,Ziggs,Zoe"
 bot = "Aphelios,Ashe,Caitlyn,Corki,Draven,Ezreal,Hwei,Jhin,Jinx,Kaisa,Kalista,KogMaw,Lucian,Mel,MissFortune,Nilah,Samira,Seraphine,Sivir,Smolder,Swain,Tristana,Twitch,Varus,Vayne,Xayah,Yasuo,Zeri,Ziggs"
-sup = "Alistar,Annie,Bard,Blitzcrank,Brand,Braum,Elise,Fiddlesticks,Galio,Gragas,Hwei,Janna,Karma,Leona,Lulu,Lux,Maokai,Mel,Milio,Morgana,Nami,Nautilus,Neeko,Nidalee,Pantheon,Poppy,Pyke,Rakan,Rell,Renata,Senna,Seraphine,Shaco,Shen,Sona,Soraka,Swain,Sylas,TahmKench,Taric,Thresh,Velkoz,Xerath,Yuumi,Zilean,Zoe,Zyra"
+sup = "Alistar,Annie,Bard,Blitzcrank,Brand,Braum,Elise,Fiddlesticks,Galio,Gragas,Hwei,Janna,Karma,Leona,Lulu,Lux,Maokai,Mel,Milio,Morgana,Nami,Nautilus,Neeko,Pantheon,Poppy,Pyke,Rakan,Rell,Renata,Senna,Seraphine,Shaco,Shen,Sona,Soraka,Swain,Sylas,TahmKench,Taric,Thresh,Velkoz,Xerath,Yuumi,Zilean,Zoe,Zyra"
 
 def convert_to_champion_id(name):
     """Convert display names to URL-friendly champion IDs"""
@@ -77,8 +77,8 @@ else:
 roles = {
     'Top': top,
     'Jungle': jung,
-    'Mid': mid,
-    'Bot': bot,
+    'Middle': mid,
+    'Bottom': bot,
     'Support': sup
 }
 
