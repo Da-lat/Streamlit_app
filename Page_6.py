@@ -61,4 +61,4 @@ else:
     img = st.session_state['cover']
     blur_level = st.selectbox('Select blur level', ['30', '20', '15', '10', '0'])
     blurred_img = img.filter(ImageFilter.GaussianBlur(int(blur_level)))
-    st.image(blurred_img, use_column_width="auto", output_format="auto")
+    st.image(blurred_img, use_container_width="auto", output_format="auto")
