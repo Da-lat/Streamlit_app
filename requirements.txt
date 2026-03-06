@@ -1,12 +1,10 @@
 streamlit
-youtube_transcript_api
+youtube-transcript-api
 google-generativeai
 PyPDF2
 pandas
 matplotlib
-config
-bs4
+beautifulsoup4
 requests
 pillow
-IPython
 newsapi-python
