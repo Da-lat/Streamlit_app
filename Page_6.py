@@ -53,7 +53,7 @@ if st.session_state['cover'] is None:
         img = Image.open(BytesIO(response.content))
         blur_level = st.selectbox('Select blur level', ['30', '20', '15', '10', '0'])
         blurred_img = img.filter(ImageFilter.GaussianBlur(int(blur_level)))
-        st.image(blurred_img, use_column_width="auto", output_format="auto")
+        st.image(blurred_img, use_container_width=True, output_format="auto")
         st.session_state['cover'] = img
     else:
         st.error(f"Error downloading image: {response.status_code} {response.reason}")
