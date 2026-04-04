@@ -8,6 +8,12 @@ st.markdown("# League Lane Matchup Analyzer")
 st.sidebar.markdown("# League Lane Matchup Analyzer")
 st.sidebar.markdown("Pick the lane champions, then generate a matchup strategy with Gemini.")
 
+if "matchup_analysis" not in st.session_state:
+    st.session_state.matchup_analysis = None
+
+if "matchup_tldr" not in st.session_state:
+    st.session_state.matchup_tldr = None
+
 ROLE_POOLS = {
     "Top": "Aatrox,Akali,Ambessa,Aurora,Camille,Cassiopeia,Chogath,Darius,DrMundo,Fiora,Galio,Gangplank,Garen,Gnar,Gragas,Gwen,Heimerdinger,Illaoi,Irelia,Jax,Jayce,KSante,Kayle,Kennen,Kled,Malphite,Mordekaiser,Nasus,Nidalee,Olaf,Ornn,Pantheon,Poppy,Quinn,Renekton,Riven,Rumble,Ryze,Sett,Shen,Singed,Sion,Sylas,TahmKench,Teemo,Trundle,Tryndamere,Urgot,Varus,Vayne,Viktor,Vladimir,Volibear,Warwick,MonkeyKing,Yasuo,Yone,Yorick,Zac",
     "Jungle": "Amumu,Belveth,Brand,Briar,Darius,Diana,DrMundo,Ekko,Elise,Evelynn,Fiddlesticks,Gragas,Graves,Gwen,Hecarim,Ivern,JarvanIV,Jax,Karthus,Kayn,Khazix,Kindred,LeeSin,Lillia,MasterYi,Naafiri,Nidalee,Nocturne,Nunu,Pantheon,Poppy,Qiyana,Rammus,RekSai,Rengar,Sejuani,Shaco,Shyvana,Skarner,Taliyah,Talon,Trundle,Udyr,Vi,Viego,Volibear,Warwick,MonkeyKing,XinZhao,Yorick,Zac,Zed,Zyra",
@@ -75,6 +81,27 @@ Structure the answer with these sections:
 8. How to transition a lane lead into winning the game
 
 Be specific, practical, and matchup-focused. Do not stay generic.
+"""
+
+    return generate_text(prompt)
+
+
+def summarize_matchup_for_pregame(analysis):
+    prompt = f"""
+You are helping a League of Legends player who is already in champion select or loading screen.
+
+Summarize the analysis below into a very short pre-game cheat sheet.
+
+Rules:
+- Keep it concise and scannable.
+- Use bullet points only.
+- Focus only on the highest-value actions before and during early lane.
+- Include: win condition, levels 1-3 plan, trading pattern, wave tip, biggest danger, and first key item/spell timing.
+- Maximum 6 bullets.
+- Each bullet should be short.
+
+Analysis:
+{analysis}
 """
 
     return generate_text(prompt)
@@ -181,5 +208,22 @@ if st.button("Analyse", use_container_width=True):
             except Exception as exc:
                 st.error(f"Gemini request failed: {exc}")
             else:
-                st.markdown("## Strategy")
-                st.write(analysis)
+                st.session_state.matchup_analysis = analysis
+                st.session_state.matchup_tldr = None
+
+if st.session_state.matchup_analysis:
+    st.markdown("## Strategy")
+    st.write(st.session_state.matchup_analysis)
+
+    if st.button("TL:DR", use_container_width=True):
+        with st.spinner("Summarizing the key points for pre-game..."):
+            try:
+                st.session_state.matchup_tldr = summarize_matchup_for_pregame(
+                    st.session_state.matchup_analysis
+                )
+            except Exception as exc:
+                st.error(f"Gemini request failed: {exc}")
+
+if st.session_state.matchup_tldr:
+    st.markdown("## TL:DR")
+    st.write(st.session_state.matchup_tldr)
