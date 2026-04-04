@@ -1,15 +1,11 @@
 import streamlit as st
-import PyPDF2
-from PyPDF2 import PdfReader
 import google.generativeai as genai
 import config
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Gemini config
 api_key = config.API_KEY
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel(config.MODEL)
 
 st.markdown("# CSV Analysis 📈")
 st.sidebar.markdown("# CSV Analysis 📈")

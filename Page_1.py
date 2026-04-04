@@ -6,11 +6,11 @@ import config
 import google.generativeai as genai
 import PyPDF2
 import time
+from gemini_utils import generate_text
 
 # Gemini config
 api_key = config.API_KEY
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel(config.MODEL)
 
 st.set_page_config(
         page_title="Youtube Video Analysis",
@@ -67,9 +67,11 @@ if yt_id != 0 and button and st.session_state.video == True:
             transcript_str = transcript_str + item['text'] + " "
         
     if transcript_str:
-        response = model.generate_content("Here is a youtube transcript, please summarize the transript into bullet points and provide a summary, act as if you are studying and you went through thr video and took notes to learn and extract the key points. Here is the transcript: " + transcript_str)
         st.session_state.yt_text = transcript_str
-        st.session_state.yt_summary = response.text
+        st.session_state.yt_summary = generate_text(
+            "Here is a youtube transcript, please summarize the transript into bullet points and provide a summary, act as if you are studying and you went through thr video and took notes to learn and extract the key points. Here is the transcript: "
+            + transcript_str,
+        )
         st.session_state.yt_answer = []
 
 if st.session_state.yt_summary:
@@ -80,9 +82,15 @@ q = st.chat_input("Do you have any questions about the youtube video?")
 messages = st.container()
 
 if q and st.session_state.yt_text:
-    response = model.generate_content(f"I am providing an extracted text passage from a youtube transcript, please search this information and answer this question. Youtube transcript: {st.session_state.yt_text}. Question: {q}")
     st.session_state.yt_answer.append({"role": "user", "content":q})  
-    st.session_state.yt_answer.append({"role": "assistant", "content": response.text})
+    st.session_state.yt_answer.append(
+        {
+            "role": "assistant",
+            "content": generate_text(
+                f"I am providing an extracted text passage from a youtube transcript, please search this information and answer this question. Youtube transcript: {st.session_state.yt_text}. Question: {q}",
+            ),
+        }
+    )
 
 if st.session_state.yt_answer:
     for message in st.session_state.yt_answer:

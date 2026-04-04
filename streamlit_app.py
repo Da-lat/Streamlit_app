@@ -10,7 +10,8 @@ video_game_covers = st.Page("Page_6.py", title="Video Game Covers", icon=":mater
 # timezones = st.Page("Page_7.py", title="Timezone Converter", icon=":material/schedule:")
 news = st.Page("Page_8.py", title="Worldwide News", icon=":material/email:")
 random_champ = st.Page("Page_9.py", title="Random Champion", icon=":material/sports_esports:")
+coach_analysis = st.Page("Page_10.py", title="Coach Analysis", icon=":material/sports_kabaddi:")
 
-pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, news, random_champ])
+pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, news, random_champ, coach_analysis])
 
 pg.run()

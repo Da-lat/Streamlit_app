@@ -3,11 +3,11 @@ from PyPDF2 import PdfReader
 import google.generativeai as genai
 import config
 import time
+from gemini_utils import generate_text
 
 # Gemini config
 api_key = config.API_KEY
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel(config.MODEL)
 
 # State initialisation
 if 'pdf' not in st.session_state:
@@ -43,9 +43,11 @@ try:
         with st.spinner('Analysing the PDF...'):
             time.sleep(5)
         text = extract_text_from_pdf(uploaded_file)
-        response = model.generate_content("Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: " + text)
         st.session_state.pdf_text = text
-        st.session_state.pdf_summary = response.text
+        st.session_state.pdf_summary = generate_text(
+            "Here is a PDF file, please summarize the file into bullet points and provide a summary, act as if you are studying and you went through the file and took notes to learn and extract the key points. Here is the file: "
+            + text,
+        )
         st.session_state.pdf_answer = []
 except:
     st.error("Invalid file, please try again")
@@ -58,9 +60,15 @@ q = st.chat_input("Do you have any questions about the PDF?")
 messages = st.container()
 
 if q and st.session_state.pdf_text:
-    response = model.generate_content(f"I am providing an extracted text passage from a pdf file, please search this information and answer this question. PDF text: {st.session_state.pdf_text}. Question: {q}")
     st.session_state.pdf_answer.append({"role": "user", "content":q})  
-    st.session_state.pdf_answer.append({"role": "assistant", "content": response.text})
+    st.session_state.pdf_answer.append(
+        {
+            "role": "assistant",
+            "content": generate_text(
+                f"I am providing an extracted text passage from a pdf file, please search this information and answer this question. PDF text: {st.session_state.pdf_text}. Question: {q}",
+            ),
+        }
+    )
 
 if st.session_state.pdf_answer:
     for message in st.session_state.pdf_answer:
