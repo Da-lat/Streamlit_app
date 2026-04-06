@@ -63,7 +63,7 @@ APP_RATE_LIMIT_LONG_WINDOW_CALLS = 90
 
 
 def get_riot_api_key():
-    return st.secrets.get("RIOT_API_KEY") 
+    return config.RIOT_API_KEY
 
 
 def parse_player_entries(raw_text):
