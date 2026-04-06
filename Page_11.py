@@ -60,10 +60,7 @@ APP_RATE_LIMIT_SHORT_WINDOW_SECONDS = 1.0
 APP_RATE_LIMIT_SHORT_WINDOW_CALLS = 18
 APP_RATE_LIMIT_LONG_WINDOW_SECONDS = 120.0
 APP_RATE_LIMIT_LONG_WINDOW_CALLS = 90
-
-
-def get_riot_api_key():
-    return config.RIOT_API_KEY
+RIOT_API_KEY = config.RIOT_API_KEY
 
 
 def parse_player_entries(raw_text):
@@ -440,7 +437,7 @@ if submitted:
     with st.spinner("Pulling ranked flex stats and match history from Riot..."):
         try:
             results = fetch_analysis(
-                api_key=get_riot_api_key(),
+                api_key=RIOT_API_KEY,
                 platform=PLATFORM_OPTIONS[selected_platform_label],
                 raw_players=raw_players,
                 match_count=match_count,
