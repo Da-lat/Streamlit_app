@@ -349,19 +349,24 @@ def analyze_combos(match_details, tracked_players):
     return combo_df, match_df
 
 
-def combo_chart(combo_df, combo_size, top_n):
-    filtered = combo_df[combo_df["Combo Size"] == combo_size].head(top_n)
+def combo_chart(combo_df, combo_size, top_n, ascending=False, title_prefix="Best"):
+    filtered = combo_df[combo_df["Combo Size"] == combo_size].sort_values(
+        by=["Win Rate %", "Matches", "Wins"],
+        ascending=[ascending, not ascending, not ascending],
+    ).head(top_n)
     if filtered.empty:
         return None
 
     fig, ax = plt.subplots(figsize=(10, max(3, 0.7 * len(filtered))))
-    ax.barh(filtered["Combo"], filtered["Win Rate %"], color="#2E8B57")
+    bar_color = "#2E8B57" if not ascending else "#B22222"
+    ax.barh(filtered["Combo"], filtered["Win Rate %"], color=bar_color)
     ax.set_xlim(0, 100)
     ax.set_xlabel("Win Rate %")
-    ax.set_title(f"Best {combo_size}-Player Flex Combinations")
+    ax.set_title(f"{title_prefix} {combo_size}-Player Flex Combinations")
     ax.invert_yaxis()
-    for index, value in enumerate(filtered["Win Rate %"]):
-        ax.text(min(value + 1, 97), index, f"{value:.1f}%", va="center")
+    for index, (_, row) in enumerate(filtered.iterrows()):
+        label = f"{row['Win Rate %']:.1f}% ({int(row['Matches'])} matches)"
+        ax.text(min(row["Win Rate %"] + 1, 97), index, label, va="center")
     fig.tight_layout()
     return fig
 
@@ -420,7 +425,10 @@ default_platform_index = platform_label_options.index("Europe West")
 with st.form("flex_combo_form"):
     selected_platform_label = st.selectbox("Platform routing", platform_label_options, index=default_platform_index)
     match_count = st.slider("Recent ranked flex matches per player", min_value=10, max_value=100, value=30, step=10)
-    min_shared_matches = st.slider("Minimum shared matches per combo", min_value=1, max_value=10, value=2, step=1)
+    min_matches_2 = st.slider("Minimum shared matches for 2-player combos", min_value=1, max_value=100, value=40, step=1)
+    min_matches_3 = st.slider("Minimum shared matches for 3-player combos", min_value=1, max_value=100, value=20, step=1)
+    min_matches_4 = st.slider("Minimum shared matches for 4-player combos", min_value=1, max_value=100, value=10, step=1)
+    min_matches_5 = st.slider("Minimum shared matches for 5-player combos", min_value=1, max_value=100, value=5, step=1)
     raw_players = st.text_area(
         "Players",
         value="",
@@ -460,22 +468,36 @@ if results:
     if combo_df.empty:
         st.warning("No shared ranked flex matches were found for these players in the sampled history.")
     else:
-        filtered_combo_df = combo_df[combo_df["Matches"] >= min_shared_matches].reset_index(drop=True)
-        if filtered_combo_df.empty:
-            st.warning("Shared matches exist, but none meet the current minimum-match filter.")
-            filtered_combo_df = combo_df
+        min_matches_by_size = {
+            2: min_matches_2,
+            3: min_matches_3,
+            4: min_matches_4,
+            5: min_matches_5,
+        }
 
         st.markdown("## Best Combinations")
-        available_sizes = sorted(filtered_combo_df["Combo Size"].unique(), reverse=True)
+        available_sizes = sorted(combo_df["Combo Size"].unique(), reverse=True)
         tabs = st.tabs([f"{size}-Player" for size in available_sizes])
 
         for tab, combo_size in zip(tabs, available_sizes):
             with tab:
-                best_rows = filtered_combo_df[filtered_combo_df["Combo Size"] == combo_size].head(10)
-                st.dataframe(best_rows, use_container_width=True, hide_index=True)
-                figure = combo_chart(filtered_combo_df, combo_size, top_n=10)
-                if figure is not None:
-                    st.pyplot(figure)
+                min_matches_required = min_matches_by_size.get(combo_size, 1)
+                best_rows = combo_df[
+                    (combo_df["Combo Size"] == combo_size) & (combo_df["Matches"] >= min_matches_required)
+                ].reset_index(drop=True)
+                if best_rows.empty:
+                    st.info(f"No {combo_size}-player combinations met the minimum of {min_matches_required} shared matches.")
+                else:
+                    st.dataframe(best_rows, use_container_width=True, hide_index=True)
+                    best_chart_col, worst_chart_col = st.columns(2)
+                    with best_chart_col:
+                        best_figure = combo_chart(best_rows, combo_size, top_n=min(10, len(best_rows)), ascending=False, title_prefix="Best")
+                        if best_figure is not None:
+                            st.pyplot(best_figure)
+                    with worst_chart_col:
+                        worst_figure = combo_chart(best_rows, combo_size, top_n=min(10, len(best_rows)), ascending=True, title_prefix="Worst")
+                        if worst_figure is not None:
+                            st.pyplot(worst_figure)
 
         st.markdown("## Shared Match Breakdown")
         st.dataframe(results["match_df"], use_container_width=True, hide_index=True)
