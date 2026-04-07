@@ -69,24 +69,41 @@ def parse_player_entries(raw_text):
         value = line.strip()
         if not value:
             continue
-        if "#" in value:
-            game_name, tag_line = value.split("#", 1)
-            entries.append(
-                {
-                    "input": value,
-                    "lookup_type": "riot_id",
-                    "game_name": game_name.strip(),
-                    "tag_line": tag_line.strip(),
-                }
-            )
+
+        if "|" in value:
+            accounts_part, person_name_part = value.split("|", 1)
+            person_name = person_name_part.strip()
         else:
-            entries.append(
-                {
-                    "input": value,
-                    "lookup_type": "summoner_name",
-                    "summoner_name": value,
-                }
-            )
+            accounts_part = value
+            person_name = ""
+
+        account_values = [account.strip() for account in accounts_part.split(",") if account.strip()]
+        if not account_values:
+            continue
+
+        for account_value in account_values:
+            entry = {
+                "input": account_value,
+                "person_name": person_name or account_value,
+                "line_input": value,
+            }
+            if "#" in account_value:
+                game_name, tag_line = account_value.split("#", 1)
+                entry.update(
+                    {
+                        "lookup_type": "riot_id",
+                        "game_name": game_name.strip(),
+                        "tag_line": tag_line.strip(),
+                    }
+                )
+            else:
+                entry.update(
+                    {
+                        "lookup_type": "summoner_name",
+                        "summoner_name": account_value,
+                    }
+                )
+            entries.append(entry)
     return entries
 
 
@@ -181,6 +198,7 @@ def resolve_player(state, api_key, platform, player_entry):
 
     return {
         "input": player_entry["input"],
+        "person_name": player_entry["person_name"],
         "display_name": display_name,
         "puuid": summoner["puuid"],
         "summoner_id": summoner_id,
@@ -237,7 +255,8 @@ def build_rank_table(players, flex_entries):
         if entry is None:
             rows.append(
                 {
-                    "Player": player["display_name"],
+                    "Player": player["person_name"],
+                    "Account": player["display_name"],
                     "Tier": "Unranked",
                     "Division": "",
                     "LP": 0,
@@ -253,7 +272,8 @@ def build_rank_table(players, flex_entries):
         total_games = wins + losses
         rows.append(
             {
-                "Player": player["display_name"],
+                "Player": player["person_name"],
+                "Account": player["display_name"],
                 "Tier": entry.get("tier", ""),
                 "Division": entry.get("rank", ""),
                 "LP": entry.get("leaguePoints", 0),
@@ -266,7 +286,7 @@ def build_rank_table(players, flex_entries):
 
 
 def analyze_combos(match_details, tracked_players):
-    tracked_by_puuid = {player["puuid"]: player["display_name"] for player in tracked_players}
+    tracked_by_puuid = {player["puuid"]: player["person_name"] for player in tracked_players}
     combo_stats = defaultdict(lambda: {"wins": 0, "losses": 0, "matches": 0})
     match_rows = []
 
@@ -299,8 +319,14 @@ def analyze_combos(match_details, tracked_players):
             if len(team_members) < 2:
                 continue
 
-            team_members = sorted(team_members, key=lambda item: item["name"].lower())
+            unique_team_members = {}
+            for member in team_members:
+                unique_team_members[member["name"]] = member
+
+            team_members = sorted(unique_team_members.values(), key=lambda item: item["name"].lower())
             player_names = [member["name"] for member in team_members]
+            if len(player_names) < 2:
+                continue
             did_win = team_members[0]["win"]
 
             match_rows.append(
@@ -432,9 +458,15 @@ with st.form("flex_combo_form"):
     raw_players = st.text_area(
         "Players",
         value="",
-        height=180,
-        placeholder="One player per line\nExamples:\nHide on bush#KR1\nDoublelift#NA1\nLegacySummonerName",
-        help="Use Riot IDs with `name#tag` when possible. Plain summoner names are kept as a fallback.",
+        height=260,
+        placeholder=(
+            "One person per line\n"
+            "Single account:\n"
+            "Wyn#EUW | Wyn\n\n"
+            "Multiple accounts for one person:\n"
+            "Welshy#CYMRU, Petez#Wales | Pete"
+        ),
+        help="Format each line as `account1, account2 | Person Name`. Plain single-account lines still work.",
     )
     submitted = st.form_submit_button("Analyse Flex Combinations", use_container_width=True)
 
