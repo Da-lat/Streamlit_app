@@ -60,6 +60,7 @@ APP_RATE_LIMIT_SHORT_WINDOW_CALLS = 18
 APP_RATE_LIMIT_LONG_WINDOW_SECONDS = 120.0
 APP_RATE_LIMIT_LONG_WINDOW_CALLS = 90
 RIOT_API_KEY = config.RIOT_API_KEY
+MIN_GAMES_FOR_MEANINGFUL_STATS = 10
 ROLE_LABELS = {
     "TOP": "Top",
     "JUNGLE": "Jungle",
@@ -801,25 +802,39 @@ def render_records(results):
     pentakill_df = results["pentakill_df"]
     collective_champion_df = results["collective_champion_df"]
     player_champion_df = results["player_champion_df"]
+    meaningful_player_df = player_df[player_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
+    meaningful_role_df = role_df[role_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
+    meaningful_collective_champion_df = collective_champion_df[
+        collective_champion_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS
+    ]
+    meaningful_player_champion_df = player_champion_df[
+        player_champion_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS
+    ]
+    meaningful_players = set(meaningful_player_df["Player"].tolist())
+    meaningful_participant_df = participant_df[participant_df["Player"].isin(meaningful_players)]
 
-    best_kda = top_record(player_df, ["KDA", "Games", "Kills / Game"], [False, False, False])
-    most_deaths = top_record(player_df, ["Deaths / Game", "Games"], [False, False])
-    most_kills_game = top_record(participant_df, ["Kills", "KDA"], [False, False])
-    best_kills_avg = top_record(player_df, ["Kills / Game", "Games", "KDA"], [False, False, False])
+    best_kda = top_record(meaningful_player_df, ["KDA", "Games", "Kills / Game"], [False, False, False])
+    most_deaths = top_record(meaningful_player_df, ["Deaths / Game", "Games"], [False, False])
+    most_kills_game = top_record(meaningful_participant_df, ["Kills", "KDA"], [False, False])
+    best_kills_avg = top_record(meaningful_player_df, ["Kills / Game", "Games", "KDA"], [False, False, False])
     best_collective_champion = top_record(
-        collective_champion_df[collective_champion_df["Games"] >= 2],
+        meaningful_collective_champion_df,
         ["Win Rate %", "Games", "KDA"],
         [False, False, False],
     )
     best_role = top_record(
-        role_df[role_df["Games"] >= 2],
+        meaningful_role_df,
         ["Win Rate %", "Games"],
         [False, False],
     )
 
     render_champion_spotlight(best_collective_champion)
 
-    st.markdown('<div class="section-note">Only matches with at least two tracked teammates are included in these records.</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="section-note">Only matches with at least two tracked teammates are included. '
+        f'Leaderboard stats below require at least {MIN_GAMES_FOR_MEANINGFUL_STATS} games.</div>',
+        unsafe_allow_html=True,
+    )
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -868,19 +883,19 @@ def render_records(results):
         )
 
     st.markdown("## Player Summary")
-    if player_df.empty:
+    if meaningful_player_df.empty:
         st.warning("No eligible matches were found after filtering for teams with at least two tracked players.")
     else:
         st.dataframe(
-            player_df.sort_values(["KDA", "Win Rate %", "Games"], ascending=[False, False, False]),
+            meaningful_player_df.sort_values(["KDA", "Win Rate %", "Games"], ascending=[False, False, False]),
             use_container_width=True,
             hide_index=True,
         )
 
     st.markdown("## Role Win Rates")
-    role_view = role_df[role_df["Games"] >= 2].sort_values(["Role", "Win Rate %", "Games"], ascending=[True, False, False])
+    role_view = meaningful_role_df.sort_values(["Role", "Win Rate %", "Games"], ascending=[True, False, False])
     if role_view.empty:
-        st.info("No role records with at least 2 games yet.")
+        st.info(f"No role records with at least {MIN_GAMES_FOR_MEANINGFUL_STATS} games yet.")
     else:
         st.dataframe(role_view, use_container_width=True, hide_index=True)
 
@@ -895,24 +910,28 @@ def render_records(results):
         )
 
     st.markdown("## Collective Champion Records")
-    st.markdown('<div class="section-note">Shows shared champion performance across the full flex group, including who has piloted each pick.</div>', unsafe_allow_html=True)
-    collective_view = collective_champion_df[collective_champion_df["Games"] >= 2].sort_values(
+    st.markdown(
+        f'<div class="section-note">Shows shared champion performance across the full flex group, including who has piloted each pick. '
+        f'Minimum sample: {MIN_GAMES_FOR_MEANINGFUL_STATS} games.</div>',
+        unsafe_allow_html=True,
+    )
+    collective_view = meaningful_collective_champion_df.sort_values(
         ["Win Rate %", "Games", "KDA"],
         ascending=[False, False, False],
     )
     if collective_view.empty:
-        st.info("No collective champion samples with at least 2 games yet.")
+        st.info(f"No collective champion samples with at least {MIN_GAMES_FOR_MEANINGFUL_STATS} games yet.")
     else:
         render_champion_gallery(collective_view.head(4), "Top Collective Picks", "Win rate")
         st.dataframe(collective_view, use_container_width=True, hide_index=True)
 
     st.markdown("## Champion Win Rates By Player")
-    member_champion_view = player_champion_df[player_champion_df["Games"] >= 2].sort_values(
+    member_champion_view = meaningful_player_champion_df.sort_values(
         ["Player", "Win Rate %", "Games"],
         ascending=[True, False, False],
     )
     if member_champion_view.empty:
-        st.info("No player/champion combinations with at least 2 games yet.")
+        st.info(f"No player/champion combinations with at least {MIN_GAMES_FOR_MEANINGFUL_STATS} games yet.")
     else:
         render_champion_gallery(member_champion_view.head(4), "Hot Hand Champions", "Win rate")
         st.dataframe(member_champion_view, use_container_width=True, hide_index=True)
