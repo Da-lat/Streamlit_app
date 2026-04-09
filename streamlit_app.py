@@ -12,7 +12,8 @@ news = st.Page("Page_8.py", title="Worldwide News", icon=":material/email:")
 random_champ = st.Page("Page_9.py", title="Random Champion", icon=":material/sports_esports:")
 coach_analysis = st.Page("Page_10.py", title="Coach Analysis", icon=":material/sports_kabaddi:")
 flex_combo_stats = st.Page("Page_11.py", title="Flex Combo Stats", icon=":material/groups:")
+flex_team_records = st.Page("Page_12.py", title="Flex Team Records", icon=":material/emoji_events:")
 
-pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, news, random_champ, coach_analysis, flex_combo_stats])
+pg = st.navigation([home_page,yt_page, pdf_page, url_page, csv_page, text_page, video_game_covers, news, random_champ, coach_analysis, flex_combo_stats, flex_team_records])
 
 pg.run()
