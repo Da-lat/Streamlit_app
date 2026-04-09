@@ -69,6 +69,81 @@ ROLE_LABELS = {
 }
 
 
+st.markdown(
+    """
+<style>
+.record-shell {
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(19,33,53,0.96), rgba(11,18,32,0.96));
+    border: 1px solid rgba(113,168,255,0.28);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+    margin-bottom: 0.75rem;
+}
+.record-label {
+    color: #8eb6ff;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+}
+.record-value {
+    color: #f7fbff;
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.record-caption {
+    color: #aab8d1;
+    font-size: 0.92rem;
+    margin-top: 0.35rem;
+}
+.champ-hero {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.1rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(30,62,103,0.98), rgba(17,25,42,0.98));
+    border: 1px solid rgba(122,195,255,0.32);
+    margin: 0.25rem 0 1rem 0;
+}
+.champ-hero img {
+    width: 88px;
+    height: 88px;
+    border-radius: 18px;
+    object-fit: cover;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.28);
+}
+.champ-hero-title {
+    color: #9fc4ff;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.champ-hero-name {
+    color: #ffffff;
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+.champ-hero-meta {
+    color: #dbe7ff;
+    font-size: 0.95rem;
+    margin-top: 0.28rem;
+}
+.section-note {
+    color: #9fb0c8;
+    font-size: 0.92rem;
+    margin-top: -0.2rem;
+    margin-bottom: 0.8rem;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
 def parse_player_entries(raw_text):
     entries = []
     for line in raw_text.splitlines():
@@ -110,6 +185,14 @@ def parse_player_entries(raw_text):
                 )
             entries.append(entry)
     return entries
+
+
+def champion_id(name):
+    return name.replace(" ", "").replace("'", "").replace(".", "")
+
+
+def champion_image_url(name):
+    return f"https://ddragon.leagueoflegends.com/cdn/15.9.1/img/champion/{champion_id(name)}.png"
 
 
 def throttle_request(state):
@@ -570,6 +653,7 @@ def build_flex_team_dataset(match_details, tracked_players):
                 "Win Rate %": round(safe_divide(stats["wins"], games) * 100, 1),
                 "KDA": round(calculate_kda(stats["kills"], stats["assists"], stats["deaths"]), 2),
                 "Players Used": len(stats["players"]),
+                "Played By": ", ".join(sorted(stats["players"])),
             }
         )
 
@@ -600,7 +684,7 @@ def build_flex_team_dataset(match_details, tracked_players):
         ),
         "collective_champion_df": pd.DataFrame(
             collective_champion_rows,
-            columns=["Champion", "Games", "Wins", "Win Rate %", "KDA", "Players Used"],
+            columns=["Champion", "Games", "Wins", "Win Rate %", "KDA", "Players Used", "Played By"],
         ),
         "player_champion_df": pd.DataFrame(
             player_champion_rows,
@@ -654,8 +738,60 @@ def top_record(df, sort_columns, ascending):
 
 
 def render_record_card(title, value, caption):
-    st.metric(title, value)
-    st.caption(caption)
+    st.markdown(
+        f"""
+<div class="record-shell">
+  <div class="record-label">{title}</div>
+  <div class="record-value">{value}</div>
+  <div class="record-caption">{caption}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_champion_spotlight(row):
+    if row is None:
+        return
+    st.markdown(
+        f"""
+<div class="champ-hero">
+  <img src="{champion_image_url(row['Champion'])}" alt="{row['Champion']}" />
+  <div>
+    <div class="champ-hero-title">Best Collective Champion</div>
+    <div class="champ-hero-name">{row['Champion']}</div>
+    <div class="champ-hero-meta">Win rate: {row['Win Rate %']:.1f}% | Games: {int(row['Games'])} | KDA: {row['KDA']:.2f}</div>
+    <div class="champ-hero-meta">Played by: {row['Played By']}</div>
+  </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_champion_gallery(df, title, stat_label):
+    if df.empty:
+        return
+    st.markdown(f"### {title}")
+    cols = st.columns(min(4, len(df)))
+    for idx, (_, row) in enumerate(df.iterrows()):
+        extra_line = ""
+        if "Player" in row.index:
+            extra_line = f"<div class=\"record-caption\">Player: {row['Player']}</div>"
+        elif "Played By" in row.index:
+            extra_line = f"<div class=\"record-caption\">Played by: {row['Played By']}</div>"
+        with cols[idx % len(cols)]:
+            st.image(champion_image_url(row["Champion"]), use_container_width=True)
+            st.markdown(
+                f"""
+<div class="record-shell">
+  <div class="record-value" style="font-size:1.1rem;">{row['Champion']}</div>
+  <div class="record-caption">{stat_label}: {row['Win Rate %']:.1f}% in {int(row['Games'])} games</div>
+  {extra_line}
+</div>
+""",
+                unsafe_allow_html=True,
+            )
 
 
 def render_records(results):
@@ -680,6 +816,10 @@ def render_records(results):
         ["Win Rate %", "Games"],
         [False, False],
     )
+
+    render_champion_spotlight(best_collective_champion)
+
+    st.markdown('<div class="section-note">Only matches with at least two tracked teammates are included in these records.</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -714,11 +854,11 @@ def render_records(results):
             str(int(pentakill_df["Pentakills"].sum()) if not pentakill_df.empty else 0),
             f"{len(pentakill_df)} pentakill games",
         )
-        if best_collective_champion is not None:
+        if best_role is not None:
             render_record_card(
-                "Best Collective Champion",
-                f"{best_collective_champion['Champion']} ({best_collective_champion['Win Rate %']:.1f}%)",
-                f"{int(best_collective_champion['Games'])} games, KDA {best_collective_champion['KDA']:.2f}",
+                "Best Role Sample",
+                f"{best_role['Player']} {best_role['Role']}",
+                f"{best_role['Win Rate %']:.1f}% win rate across {int(best_role['Games'])} games",
             )
 
     if best_role is not None:
@@ -755,6 +895,7 @@ def render_records(results):
         )
 
     st.markdown("## Collective Champion Records")
+    st.markdown('<div class="section-note">Shows shared champion performance across the full flex group, including who has piloted each pick.</div>', unsafe_allow_html=True)
     collective_view = collective_champion_df[collective_champion_df["Games"] >= 2].sort_values(
         ["Win Rate %", "Games", "KDA"],
         ascending=[False, False, False],
@@ -762,6 +903,7 @@ def render_records(results):
     if collective_view.empty:
         st.info("No collective champion samples with at least 2 games yet.")
     else:
+        render_champion_gallery(collective_view.head(4), "Top Collective Picks", "Win rate")
         st.dataframe(collective_view, use_container_width=True, hide_index=True)
 
     st.markdown("## Champion Win Rates By Player")
@@ -772,6 +914,7 @@ def render_records(results):
     if member_champion_view.empty:
         st.info("No player/champion combinations with at least 2 games yet.")
     else:
+        render_champion_gallery(member_champion_view.head(4), "Hot Hand Champions", "Win rate")
         st.dataframe(member_champion_view, use_container_width=True, hide_index=True)
 
     with st.expander("Eligible Match Breakdown"):
