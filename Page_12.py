@@ -1080,13 +1080,17 @@ def render_award_card(title, player, value, detail):
     )
 
 
-def build_awards(player_df):
+def build_awards(player_df, participant_df, role_df, player_champion_df):
     if player_df.empty:
         return []
 
     candidates = player_df[player_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
     if candidates.empty:
         return []
+    meaningful_players = set(candidates["Player"].tolist())
+    participant_candidates = participant_df[participant_df["Player"].isin(meaningful_players)].copy()
+    role_candidates = role_df[role_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS].copy()
+    champion_candidates = player_champion_df[player_champion_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS].copy()
 
     awards = []
 
@@ -1096,6 +1100,17 @@ def build_awards(player_df):
                 {
                     "Title": title,
                     "Player": row["Player"],
+                    "Value": value,
+                    "Detail": detail,
+                }
+            )
+
+    def add_champion_award(title, row, value, detail):
+        if row is not None:
+            awards.append(
+                {
+                    "Title": title,
+                    "Player": f"{row['Player']} on {row['Champion']}",
                     "Value": value,
                     "Detail": detail,
                 }
@@ -1119,6 +1134,14 @@ def build_awards(player_df):
         "Kills, assists, damage, vision, objectives, KP, and wins mashed into one loud number.",
     )
 
+    best_kda = top_record(candidates, ["KDA", "Games", "Win Rate %"], [False, False, False])
+    add_award(
+        "KDArtist",
+        best_kda,
+        f"{best_kda['KDA']:.2f} KDA" if best_kda is not None else "",
+        f"{best_kda['Kills / Game']:.2f}/{best_kda['Deaths / Game']:.2f}/{best_kda['Assists / Game']:.2f} per game",
+    )
+
     best_damage = top_record(candidates, ["Damage / Game", "Games"], [False, False])
     add_award(
         "Damage Department",
@@ -1133,6 +1156,20 @@ def build_awards(player_df):
         cleanest,
         f"{cleanest['Deaths / Game']:.2f} deaths / game" if cleanest is not None else "",
         "Best at keeping the grey screen away.",
+    )
+
+    survival_plus = candidates.copy()
+    survival_plus["Survival Score"] = (
+        (survival_plus["KDA"] * 18)
+        + survival_plus["Win Rate %"]
+        - (survival_plus["Deaths / Game"] * 10)
+    )
+    survival_lead = top_record(survival_plus, ["Survival Score", "KDA", "Win Rate %"], [False, False, False])
+    add_award(
+        "No Receipt No Death",
+        survival_lead,
+        f"{survival_lead['Deaths / Game']:.2f} deaths / game" if survival_lead is not None else "",
+        f"{survival_lead['KDA']:.2f} KDA with {survival_lead['Win Rate %']:.1f}% WR",
     )
 
     limit_tester = top_record(candidates, ["Deaths / Game", "Games"], [False, False])
@@ -1151,6 +1188,14 @@ def build_awards(player_df):
         f"{vision_lead['Control Wards / Game']:.2f} control wards / game" if vision_lead is not None else "",
     )
 
+    control_ward_lead = top_record(candidates, ["Control Wards / Game", "Vision / Game", "Games"], [False, False, False])
+    add_award(
+        "Control Ward Investor",
+        control_ward_lead,
+        f"{control_ward_lead['Control Wards / Game']:.2f} / game" if control_ward_lead is not None else "",
+        "Keeps putting money into map information.",
+    )
+
     objective_lead = top_record(candidates, ["Objective Damage / Game", "Games"], [False, False])
     add_award(
         "Objective Caller",
@@ -1159,12 +1204,77 @@ def build_awards(player_df):
         "Turrets, dragons, grubs, barons, and anything else with an HP bar.",
     )
 
+    assist_lead = top_record(candidates, ["Assists / Game", "Avg KP %", "Games"], [False, False, False])
+    add_award(
+        "Assist Engine",
+        assist_lead,
+        f"{assist_lead['Assists / Game']:.2f} assists / game" if assist_lead is not None else "",
+        f"{assist_lead['Avg KP %']:.1f}% average kill participation",
+    )
+
+    kp_lead = top_record(candidates, ["Avg KP %", "Assists / Game", "KDA"], [False, False, False])
+    add_award(
+        "Always In The Screenshot",
+        kp_lead,
+        f"{kp_lead['Avg KP %']:.1f}% KP" if kp_lead is not None else "",
+        "Somehow appears in every fight recap.",
+    )
+
     farm_lead = top_record(candidates, ["CS / Min", "Games"], [False, False])
     add_award(
         "Farm Simulator",
         farm_lead,
         f"{farm_lead['CS / Min']:.2f} CS / min" if farm_lead is not None else "",
         f"{farm_lead['Gold / Game']:.0f} gold / game" if farm_lead is not None else "",
+    )
+
+    gold_lead = top_record(candidates, ["Gold / Game", "CS / Min", "Games"], [False, False, False])
+    add_award(
+        "Gold Printer",
+        gold_lead,
+        f"{gold_lead['Gold / Game']:.0f} gold / game" if gold_lead is not None else "",
+        f"{gold_lead['CS / Min']:.2f} CS/min and {gold_lead['Damage / Game']:.0f} damage/game",
+    )
+
+    budget_carry = candidates.copy()
+    budget_carry["Carry Per 1k Gold"] = budget_carry.apply(
+        lambda row: safe_divide(row["Carry Score / Game"], row["Gold / Game"] / 1000),
+        axis=1,
+    )
+    budget_lead = top_record(budget_carry, ["Carry Per 1k Gold", "Win Rate %", "Games"], [False, False, False])
+    add_award(
+        "Budget Carry",
+        budget_lead,
+        f"{budget_lead['Carry Per 1k Gold']:.2f} carry score / 1k gold" if budget_lead is not None else "",
+        "Best output for the resources they take.",
+    )
+
+    raid_boss = candidates.copy()
+    raid_boss["Raid Boss Score"] = (
+        raid_boss["Damage Taken / Game"] / 600
+        + raid_boss["KDA"] * 8
+        + raid_boss["Win Rate %"] / 3
+    )
+    raid_boss_lead = top_record(raid_boss, ["Raid Boss Score", "Damage Taken / Game"], [False, False])
+    add_award(
+        "Raid Boss",
+        raid_boss_lead,
+        f"{raid_boss_lead['Damage Taken / Game']:.0f} damage taken / game" if raid_boss_lead is not None else "",
+        f"Still holds {raid_boss_lead['KDA']:.2f} KDA and {raid_boss_lead['Win Rate %']:.1f}% WR",
+    )
+
+    glass_cannon = candidates.copy()
+    glass_cannon["Glass Cannon Score"] = (
+        glass_cannon["Damage / Game"] / 1000
+        + glass_cannon["Kills / Game"] * 3
+        + glass_cannon["Deaths / Game"]
+    )
+    glass_cannon_lead = top_record(glass_cannon, ["Glass Cannon Score", "Damage / Game"], [False, False])
+    add_award(
+        "Glass Cannon",
+        glass_cannon_lead,
+        f"{glass_cannon_lead['Damage / Game']:.0f} damage / game" if glass_cannon_lead is not None else "",
+        f"{glass_cannon_lead['Kills / Game']:.2f} kills and {glass_cannon_lead['Deaths / Game']:.2f} deaths per game",
     )
 
     solo_kill_lead = top_record(candidates, ["Solo Kills", "Games"], [False, False])
@@ -1185,11 +1295,188 @@ def build_awards(player_df):
             "Fastest to turn loading screen confidence into action.",
         )
 
+    multikill_lead = top_record(
+        candidates,
+        ["Quadra Kills", "Triple Kills", "Double Kills", "Games"],
+        [False, False, False, False],
+    )
+    if multikill_lead is not None and (
+        multikill_lead["Double Kills"] + multikill_lead["Triple Kills"] + multikill_lead["Quadra Kills"]
+    ) > 0:
+        add_award(
+            "Highlight Reel",
+            multikill_lead,
+            f"{int(multikill_lead['Double Kills'])} doubles, {int(multikill_lead['Triple Kills'])} triples",
+            f"{int(multikill_lead['Quadra Kills'])} quadras in the sample",
+        )
+
+    if not role_candidates.empty:
+        best_role = top_record(role_candidates, ["Win Rate %", "Games"], [False, False])
+        if best_role is not None:
+            awards.append(
+                {
+                    "Title": "Role Lock",
+                    "Player": f"{best_role['Player']} {best_role['Role']}",
+                    "Value": f"{best_role['Win Rate %']:.1f}% WR",
+                    "Detail": f"{int(best_role['Games'])} games in role",
+                }
+            )
+
+        role_flex = role_candidates.groupby("Player").agg(
+            Meaningful_Roles=("Role", "nunique"),
+            Total_Role_Games=("Games", "sum"),
+            Avg_Role_WR=("Win Rate %", "mean"),
+        ).reset_index()
+        role_flex = role_flex.rename(
+            columns={
+                "Meaningful_Roles": "Meaningful Roles",
+                "Total_Role_Games": "Total Role Games",
+                "Avg_Role_WR": "Avg Role WR %",
+            }
+        )
+        role_flex_lead = top_record(
+            role_flex,
+            ["Meaningful Roles", "Avg Role WR %", "Total Role Games"],
+            [False, False, False],
+        )
+        if role_flex_lead is not None and role_flex_lead["Meaningful Roles"] > 1:
+            awards.append(
+                {
+                    "Title": "Role Flex Threat",
+                    "Player": role_flex_lead["Player"],
+                    "Value": f"{int(role_flex_lead['Meaningful Roles'])} roles",
+                    "Detail": f"{role_flex_lead['Avg Role WR %']:.1f}% average role WR",
+                }
+            )
+
+    if not champion_candidates.empty:
+        champion_pool = champion_candidates.groupby("Player").agg(
+            Meaningful_Champs=("Champion", "nunique"),
+            Champion_Games=("Games", "sum"),
+            Avg_Champion_WR=("Win Rate %", "mean"),
+        ).reset_index()
+        champion_pool = champion_pool.rename(
+            columns={
+                "Meaningful_Champs": "Meaningful Champs",
+                "Champion_Games": "Champion Games",
+                "Avg_Champion_WR": "Avg Champion WR %",
+            }
+        )
+        champion_pool_lead = top_record(
+            champion_pool,
+            ["Meaningful Champs", "Avg Champion WR %", "Champion Games"],
+            [False, False, False],
+        )
+        if champion_pool_lead is not None:
+            awards.append(
+                {
+                    "Title": "Champion Ocean",
+                    "Player": champion_pool_lead["Player"],
+                    "Value": f"{int(champion_pool_lead['Meaningful Champs'])} 10-game champs",
+                    "Detail": f"{champion_pool_lead['Avg Champion WR %']:.1f}% average WR on those picks",
+                }
+            )
+
+        pocket_pick = top_record(
+            champion_candidates,
+            ["Win Rate %", "Games", "KDA", "Carry Score / Game"],
+            [False, False, False, False],
+        )
+        add_champion_award(
+            "Pocket Pick Specialist",
+            pocket_pick,
+            f"{pocket_pick['Win Rate %']:.1f}% WR" if pocket_pick is not None else "",
+            f"{int(pocket_pick['Games'])} games, {pocket_pick['KDA']:.2f} KDA",
+        )
+
+        comfort_pick = top_record(
+            champion_candidates,
+            ["Games", "Win Rate %", "KDA"],
+            [False, False, False],
+        )
+        add_champion_award(
+            "Comfort Pick Lock-In",
+            comfort_pick,
+            f"{int(comfort_pick['Games'])} games" if comfort_pick is not None else "",
+            f"{comfort_pick['Win Rate %']:.1f}% WR and {comfort_pick['KDA']:.2f} KDA",
+        )
+
+        carry_pick = top_record(
+            champion_candidates,
+            ["Carry Score / Game", "Win Rate %", "Games"],
+            [False, False, False],
+        )
+        add_champion_award(
+            "Signature Carry Pick",
+            carry_pick,
+            f"{carry_pick['Carry Score / Game']:.2f} carry score / game" if carry_pick is not None else "",
+            f"{carry_pick['Champion']} has been the loudest lock-in.",
+        )
+
+    if not participant_candidates.empty:
+        single_carry = top_record(participant_candidates, ["Carry Score", "KDA", "Kills"], [False, False, False])
+        add_award(
+            "One-Game Takeover",
+            single_carry,
+            f"{single_carry['Carry Score']:.2f} carry score" if single_carry is not None else "",
+            f"{single_carry['Champion']} | {int(single_carry['Kills'])}/{int(single_carry['Deaths'])}/{int(single_carry['Assists'])} in {single_carry['Match ID']}",
+        )
+
+        single_damage = top_record(participant_candidates, ["Damage to Champs", "Kills"], [False, False])
+        add_award(
+            "Biggest Nuke",
+            single_damage,
+            f"{int(single_damage['Damage to Champs'])} damage" if single_damage is not None else "",
+            f"{single_damage['Player']} on {single_damage['Champion']} in one game",
+        )
+
+        single_objective = top_record(participant_candidates, ["Objective Damage", "Damage to Champs"], [False, False])
+        add_award(
+            "Objective Heist",
+            single_objective,
+            f"{int(single_objective['Objective Damage'])} objective damage" if single_objective is not None else "",
+            f"{single_objective['Champion']} in {single_objective['Match ID']}",
+        )
+
+        single_vision = top_record(participant_candidates, ["Vision Score", "Control Wards"], [False, False])
+        add_award(
+            "Map Lighthouse",
+            single_vision,
+            f"{int(single_vision['Vision Score'])} vision score" if single_vision is not None else "",
+            f"{int(single_vision['Control Wards'])} control wards in one game",
+        )
+
+        deathless_games = participant_candidates[
+            (participant_candidates["Deaths"] == 0) & (participant_candidates["Kills"] + participant_candidates["Assists"] > 0)
+        ]
+        if not deathless_games.empty:
+            deathless_carry = top_record(deathless_games, ["Kills", "Assists", "Carry Score"], [False, False, False])
+            add_award(
+                "Deathless Run",
+                deathless_carry,
+                f"{int(deathless_carry['Kills'])}/{int(deathless_carry['Deaths'])}/{int(deathless_carry['Assists'])}",
+                f"{deathless_carry['Champion']} in {deathless_carry['Match ID']}",
+            )
+
+        comeback_support = participant_candidates.copy()
+        comeback_support["Assist Vision Score"] = (
+            comeback_support["Assists"] * 2
+            + comeback_support["Vision Score"] / 2
+            + comeback_support["Kill Participation %"] / 5
+        )
+        support_lead = top_record(comeback_support, ["Assist Vision Score", "Assists"], [False, False])
+        add_award(
+            "Backline Director",
+            support_lead,
+            f"{int(support_lead['Assists'])} assists, {int(support_lead['Vision Score'])} vision" if support_lead is not None else "",
+            f"{support_lead['Kill Participation %']:.1f}% KP in one game",
+        )
+
     return awards
 
 
-def render_awards(player_df):
-    awards = build_awards(player_df)
+def render_awards(player_df, participant_df, role_df, player_champion_df):
+    awards = build_awards(player_df, participant_df, role_df, player_champion_df)
     if not awards:
         st.info(f"Group awards unlock once at least one player has {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games.")
         return
@@ -1200,7 +1487,7 @@ def render_awards(player_df):
         unsafe_allow_html=True,
     )
     cols = st.columns(4)
-    for idx, award in enumerate(awards[:8]):
+    for idx, award in enumerate(awards):
         with cols[idx % len(cols)]:
             render_award_card(award["Title"], award["Player"], award["Value"], award["Detail"])
 
@@ -2144,7 +2431,7 @@ def render_records(results):
             f"{best_role['Win Rate %']:.1f}% across {int(best_role['Games'])} games."
         )
 
-    render_awards(player_df)
+    render_awards(player_df, participant_df, role_df, player_champion_df)
     render_duo_section(participant_df)
     render_form_section(participant_df, match_df)
     render_tournament_tiers(results["rank_df"], player_df, role_df, player_champion_df)
