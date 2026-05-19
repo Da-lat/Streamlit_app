@@ -63,8 +63,8 @@ APP_RATE_LIMIT_LONG_WINDOW_SECONDS = 120.0
 APP_RATE_LIMIT_LONG_WINDOW_CALLS = 90
 RIOT_API_KEY = config.RIOT_API_KEY
 MIN_GAMES_FOR_MEANINGFUL_STATS = 10
-MIN_DUO_GAMES_FOR_FUN_STATS = 3
-MIN_CHAMPION_GAMES_FOR_RIVALRIES = 2
+MIN_DUO_GAMES_FOR_FUN_STATS = MIN_GAMES_FOR_MEANINGFUL_STATS
+MIN_CHAMPION_GAMES_FOR_RIVALRIES = MIN_GAMES_FOR_MEANINGFUL_STATS
 ROLE_LABELS = {
     "TOP": "Top",
     "JUNGLE": "Jungle",
@@ -1051,13 +1051,6 @@ def render_champion_gallery(df, title, stat_label):
             )
 
 
-def get_sample_floor(df, column, preferred):
-    if df.empty or column not in df.columns:
-        return 1
-    max_value = int(df[column].max()) if pd.notna(df[column].max()) else 1
-    return max(1, min(preferred, max_value))
-
-
 def render_award_card(title, player, value, detail):
     st.markdown(
         f"""
@@ -1076,10 +1069,9 @@ def build_awards(player_df):
     if player_df.empty:
         return []
 
-    minimum_games = get_sample_floor(player_df, "Games", MIN_GAMES_FOR_MEANINGFUL_STATS)
-    candidates = player_df[player_df["Games"] >= minimum_games]
+    candidates = player_df[player_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
     if candidates.empty:
-        candidates = player_df
+        return []
 
     awards = []
 
@@ -1184,6 +1176,7 @@ def build_awards(player_df):
 def render_awards(player_df):
     awards = build_awards(player_df)
     if not awards:
+        st.info(f"Group awards unlock once at least one player has {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games.")
         return
 
     st.markdown("## Group Awards")
@@ -1443,8 +1436,15 @@ def render_duel_arena(participant_df):
         st.info("These two do not have same-team games in the current sample.")
         return
 
-    shared_wins = int(shared["Win A"].sum()) if "Win A" in shared.columns else int((shared["Result A"] == "Win").sum())
     shared_games = len(shared)
+    if shared_games < MIN_GAMES_FOR_MEANINGFUL_STATS:
+        st.info(
+            f"{player_a} and {player_b} have {shared_games} shared same-team games. "
+            f"Head-to-head stats need {MIN_GAMES_FOR_MEANINGFUL_STATS} games."
+        )
+        return
+
+    shared_wins = int(shared["Win A"].sum()) if "Win A" in shared.columns else int((shared["Result A"] == "Win").sum())
     metric_cards = st.columns(3)
     with metric_cards[0]:
         render_record_card(
@@ -1543,22 +1543,22 @@ def render_champion_rivalries(player_champion_df):
         unsafe_allow_html=True,
     )
 
-    max_games = int(player_champion_df["Games"].max()) if not player_champion_df.empty else 1
-    if max_games <= 1:
-        min_games = 1
-    else:
-        default_min = min(MIN_CHAMPION_GAMES_FOR_RIVALRIES, max_games)
+    max_games = int(player_champion_df["Games"].max()) if not player_champion_df.empty else 0
+    min_games = MIN_CHAMPION_GAMES_FOR_RIVALRIES
+    if max_games >= MIN_CHAMPION_GAMES_FOR_RIVALRIES:
         min_games = st.slider(
             "Minimum games for champion claims",
-            min_value=1,
+            min_value=MIN_CHAMPION_GAMES_FOR_RIVALRIES,
             max_value=max_games,
-            value=max(1, default_min),
+            value=MIN_CHAMPION_GAMES_FOR_RIVALRIES,
             step=1,
             key="flex_champion_claim_min_games",
         )
     rivalry_df = build_champion_rivalries(player_champion_df, min_games)
     if rivalry_df.empty:
-        st.info("No champions have enough games from at least two different tracked players yet.")
+        st.info(
+            f"No champions have at least {min_games} games from two different tracked players yet."
+        )
         return
 
     rivalry_view = rivalry_df.sort_values(["Owner WR %", "Owner Games", "Gap %"], ascending=[False, False, False])
@@ -1576,10 +1576,9 @@ def render_champion_rivalries(player_champion_df):
     with st.expander(f"{selected_champion} player breakdown"):
         st.dataframe(champion_rows, use_container_width=True, hide_index=True)
 
-    practice_tie_column = "Deaths / Game" if "Deaths / Game" in player_champion_df.columns else "KDA"
     cursed = player_champion_df[player_champion_df["Games"] >= min_games].sort_values(
-        ["Win Rate %", "Games", practice_tie_column],
-        ascending=[True, False, practice_tie_column != "KDA"],
+        ["Win Rate %", "Games", "KDA", "Carry Score / Game"],
+        ascending=[True, False, True, True],
     )
     if not cursed.empty:
         practice_view = cursed.head(10).copy()
@@ -1646,10 +1645,14 @@ def render_form_section(participant_df, match_df):
     form_df = build_player_form(participant_df)
     if form_df.empty:
         return
+    form_df = form_df[form_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
+    if form_df.empty:
+        st.info(f"Form check unlocks once a player has {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games.")
+        return
 
     st.markdown("## Form Check")
     timeline = build_team_timeline(match_df)
-    if not timeline.empty:
+    if len(match_df) >= MIN_GAMES_FOR_MEANINGFUL_STATS and not timeline.empty:
         st.line_chart(timeline)
 
     hot = top_record(form_df, ["Recent WR %", "Best Win Streak", "Games"], [False, False, False])
@@ -1686,10 +1689,10 @@ def render_duo_section(participant_df):
         unsafe_allow_html=True,
     )
 
-    minimum_games = get_sample_floor(pair_df, "Games", MIN_DUO_GAMES_FOR_FUN_STATS)
-    duo_view = pair_df[pair_df["Games"] >= minimum_games].copy()
+    duo_view = pair_df[pair_df["Games"] >= MIN_DUO_GAMES_FOR_FUN_STATS].copy()
     if duo_view.empty:
-        duo_view = pair_df
+        st.info(f"Duo stats unlock once a pair has {MIN_DUO_GAMES_FOR_FUN_STATS} same-team games.")
+        return
     players = sorted(set(duo_view["Player A"]).union(duo_view["Player B"]))
 
     best_duo = top_record(duo_view, ["Win Rate %", "Games", "Combined KDA"], [False, False, False])
@@ -1824,14 +1827,7 @@ def render_records(results):
         if player_df.empty:
             st.warning("No eligible matches were found after filtering for teams with at least two tracked players.")
         else:
-            st.info(
-                f"No player has {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games yet. Showing all sampled players."
-            )
-            st.dataframe(
-                player_df.sort_values(["KDA", "Win Rate %", "Games"], ascending=[False, False, False]),
-                use_container_width=True,
-                hide_index=True,
-            )
+            st.info(f"No player has {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games yet.")
     else:
         st.dataframe(
             meaningful_player_df.sort_values(["KDA", "Win Rate %", "Games"], ascending=[False, False, False]),
@@ -1876,8 +1872,8 @@ def render_records(results):
 
     st.markdown("## Champion Win Rates By Player")
     member_champion_view = meaningful_player_champion_df.sort_values(
-        ["Player", "Win Rate %", "Games"],
-        ascending=[True, False, False],
+        ["Win Rate %", "Games", "KDA", "Carry Score / Game"],
+        ascending=[False, False, False, False],
     )
     if member_champion_view.empty:
         st.info(f"No player/champion combinations with at least {MIN_GAMES_FOR_MEANINGFUL_STATS} games yet.")
