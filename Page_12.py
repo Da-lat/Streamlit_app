@@ -72,6 +72,21 @@ ROLE_LABELS = {
     "BOTTOM": "Bottom",
     "UTILITY": "Support",
 }
+RANK_TIER_POINTS = {
+    "CHALLENGER": 800,
+    "GRANDMASTER": 700,
+    "MASTER": 600,
+    "DIAMOND": 500,
+    "EMERALD": 400,
+    "PLATINUM": 320,
+    "GOLD": 250,
+    "SILVER": 180,
+    "BRONZE": 110,
+    "IRON": 50,
+    "UNRANKED": 0,
+}
+RANK_DIVISION_POINTS = {"I": 75, "II": 50, "III": 25, "IV": 0, "": 0}
+SCOUT_TEAM_SIZE = 5
 
 
 st.markdown(
@@ -1730,6 +1745,317 @@ def render_duo_section(participant_df):
     )
 
 
+def rank_strength_score(row):
+    tier = str(row.get("Tier", "Unranked") or "Unranked").upper()
+    division = str(row.get("Division", "") or "").upper()
+    lp = row.get("LP", 0)
+    try:
+        lp_value = float(lp)
+    except (TypeError, ValueError):
+        lp_value = 0
+
+    raw_score = RANK_TIER_POINTS.get(tier, 0) + RANK_DIVISION_POINTS.get(division, 0) + min(max(lp_value, 0), 250)
+    return min(100.0, safe_divide(raw_score, 950) * 100)
+
+
+def percentile_score(series, higher_is_better=True):
+    numeric = pd.to_numeric(series, errors="coerce")
+    if numeric.notna().sum() == 0:
+        return pd.Series([None] * len(series), index=series.index)
+    return numeric.rank(pct=True, ascending=higher_is_better) * 100
+
+
+def add_percentile_component(df, source_column, score_column, higher_is_better=True):
+    if source_column not in df.columns:
+        df[score_column] = None
+        return
+    df[score_column] = percentile_score(df[source_column], higher_is_better=higher_is_better)
+
+
+def build_best_rank_rows(rank_df):
+    if rank_df.empty:
+        return pd.DataFrame(columns=["Player", "Account", "Flex Rank", "Rank Score"])
+
+    ranked = rank_df.copy()
+    ranked["Rank Score"] = ranked.apply(rank_strength_score, axis=1)
+    ranked["Flex Rank"] = ranked.apply(
+        lambda row: "Unranked"
+        if str(row.get("Tier", "Unranked")) == "Unranked"
+        else f"{row.get('Tier', '')} {row.get('Division', '')} {int(row.get('LP', 0))} LP",
+        axis=1,
+    )
+    ranked = ranked.sort_values(["Player", "Rank Score", "Win Rate %"], ascending=[True, False, False])
+    return ranked.drop_duplicates("Player", keep="first")[["Player", "Account", "Flex Rank", "Rank Score"]]
+
+
+def build_role_scouting(role_df):
+    if role_df.empty:
+        return pd.DataFrame(columns=["Player", "Strongest Role", "Role Games", "Role WR %", "Role Score"])
+
+    meaningful_roles = role_df[role_df["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS].copy()
+    if meaningful_roles.empty:
+        return pd.DataFrame(columns=["Player", "Strongest Role", "Role Games", "Role WR %", "Role Score"])
+
+    meaningful_roles["Role Score"] = (
+        meaningful_roles["Win Rate %"] * 0.8
+        + meaningful_roles["Games"].clip(upper=30).apply(lambda games: safe_divide(games, 30) * 20)
+    )
+    best_roles = meaningful_roles.sort_values(
+        ["Player", "Role Score", "Games"],
+        ascending=[True, False, False],
+    ).drop_duplicates("Player", keep="first")
+    return best_roles.rename(
+        columns={"Role": "Strongest Role", "Games": "Role Games", "Win Rate %": "Role WR %"}
+    )[["Player", "Strongest Role", "Role Games", "Role WR %", "Role Score"]]
+
+
+def build_champion_scouting(player_champion_df):
+    columns = [
+        "Player",
+        "Unique Champs",
+        "Meaningful Champs",
+        "Best Champion",
+        "Best Champion WR %",
+        "Best Champion Games",
+        "Best Champion KDA",
+        "Champion Diversity Score",
+    ]
+    if player_champion_df.empty:
+        return pd.DataFrame(columns=columns)
+
+    rows = []
+    for player, group in player_champion_df.groupby("Player"):
+        unique_champs = group["Champion"].nunique()
+        meaningful_champs = group[group["Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS]
+        best_champion = None
+        if not meaningful_champs.empty:
+            best_champion = meaningful_champs.sort_values(
+                ["Win Rate %", "Games", "KDA", "Carry Score / Game"],
+                ascending=[False, False, False, False],
+            ).iloc[0]
+
+        rows.append(
+            {
+                "Player": player,
+                "Unique Champs": int(unique_champs),
+                "Meaningful Champs": int(len(meaningful_champs)),
+                "Best Champion": best_champion["Champion"] if best_champion is not None else "Needs sample",
+                "Best Champion WR %": round(best_champion["Win Rate %"], 1) if best_champion is not None else None,
+                "Best Champion Games": int(best_champion["Games"]) if best_champion is not None else 0,
+                "Best Champion KDA": round(best_champion["KDA"], 2) if best_champion is not None else None,
+            }
+        )
+
+    champion_df = pd.DataFrame(rows, columns=columns[:-1])
+    champion_df["Champion Diversity Score"] = (
+        champion_df["Unique Champs"].clip(upper=20).apply(lambda count: safe_divide(count, 20) * 65)
+        + champion_df["Meaningful Champs"].clip(upper=5).apply(lambda count: safe_divide(count, 5) * 35)
+    )
+    return champion_df[columns]
+
+
+def scouting_note(row):
+    if row["Eligible Games"] < MIN_GAMES_FOR_MEANINGFUL_STATS:
+        return f"Provisional: {int(row['Eligible Games'])} eligible games; needs more scout tape."
+    strengths = []
+    if row.get("Win Rate %", 0) >= 60:
+        strengths.append("wins")
+    if row.get("KDA", 0) >= 3:
+        strengths.append("clean KDA")
+    if row.get("Champion Diversity Score", 0) >= 55:
+        strengths.append("champ pool")
+    if row.get("Role Score", 0) >= 55:
+        strengths.append(f"{row.get('Strongest Role', 'role')} edge")
+    if row.get("Objective Damage / Game", 0) >= row.get("Objective Damage / Game Median", 0):
+        strengths.append("objectives")
+    return ", ".join(strengths[:3]) if strengths else "Solid sample; no single standout edge."
+
+
+def build_tournament_scouting(rank_df, player_df, role_df, player_champion_df):
+    best_rank_df = build_best_rank_rows(rank_df)
+    role_scout_df = build_role_scouting(role_df)
+    champion_scout_df = build_champion_scouting(player_champion_df)
+
+    player_names = set(best_rank_df["Player"].tolist())
+    player_names.update(player_df["Player"].tolist() if not player_df.empty else [])
+    player_names.update(role_df["Player"].tolist() if not role_df.empty else [])
+    player_names.update(player_champion_df["Player"].tolist() if not player_champion_df.empty else [])
+    if not player_names:
+        return pd.DataFrame()
+
+    scout_df = pd.DataFrame({"Player": sorted(player_names)})
+    scout_df = scout_df.merge(best_rank_df, on="Player", how="left")
+    scout_df = scout_df.merge(player_df, on="Player", how="left")
+    scout_df = scout_df.merge(role_scout_df, on="Player", how="left")
+    scout_df = scout_df.merge(champion_scout_df, on="Player", how="left")
+
+    stat_columns = [
+        "Games",
+        "Wins",
+        "Win Rate %",
+        "Kills / Game",
+        "Deaths / Game",
+        "Assists / Game",
+        "KDA",
+        "Damage / Game",
+        "Gold / Game",
+        "Vision / Game",
+        "CS / Min",
+        "Objective Damage / Game",
+        "Damage Taken / Game",
+        "Avg KP %",
+        "Solo Kills",
+        "First Bloods",
+        "Control Wards / Game",
+        "Carry Score / Game",
+        "Unique Champs",
+        "Meaningful Champs",
+        "Champion Diversity Score",
+        "Role Score",
+        "Rank Score",
+    ]
+    for column in stat_columns:
+        if column in scout_df.columns:
+            scout_df[column] = pd.to_numeric(scout_df[column], errors="coerce")
+
+    scout_df["Eligible Games"] = scout_df["Games"].fillna(0).astype(int)
+    scout_df["Sample Status"] = scout_df["Eligible Games"].apply(
+        lambda games: "Ready" if games >= MIN_GAMES_FOR_MEANINGFUL_STATS else "Provisional"
+    )
+    scout_df["Strongest Role"] = scout_df["Strongest Role"].fillna("Needs sample")
+    scout_df["Flex Rank"] = scout_df["Flex Rank"].fillna("Unranked")
+    scout_df["Account"] = scout_df["Account"].fillna("")
+    scout_df["Best Champion"] = scout_df["Best Champion"].fillna("Needs sample")
+    scout_df["Objective Damage / Game Median"] = scout_df["Objective Damage / Game"].median()
+
+    meaningful_mask = scout_df["Eligible Games"] >= MIN_GAMES_FOR_MEANINGFUL_STATS
+    meaningful_stats = scout_df.where(meaningful_mask)
+    add_percentile_component(scout_df, "Rank Score", "Rank Component")
+    for source_column, component_column, higher_is_better in [
+        ("Win Rate %", "Win Rate Component", True),
+        ("KDA", "KDA Component", True),
+        ("Carry Score / Game", "Carry Component", True),
+        ("Damage / Game", "Damage Component", True),
+        ("Objective Damage / Game", "Objective Component", True),
+        ("Vision / Game", "Vision Component", True),
+        ("CS / Min", "CS Component", True),
+        ("Avg KP %", "KP Component", True),
+        ("Deaths / Game", "Survival Component", False),
+        ("Champion Diversity Score", "Champion Pool Component", True),
+        ("Role Score", "Role Component", True),
+    ]:
+        scout_df[component_column] = percentile_score(
+            meaningful_stats[source_column],
+            higher_is_better=higher_is_better,
+        )
+
+    weights = {
+        "Rank Component": 0.16,
+        "Win Rate Component": 0.18,
+        "Carry Component": 0.15,
+        "KDA Component": 0.12,
+        "Damage Component": 0.09,
+        "Objective Component": 0.08,
+        "Vision Component": 0.06,
+        "CS Component": 0.05,
+        "KP Component": 0.05,
+        "Survival Component": 0.04,
+        "Champion Pool Component": 0.06,
+        "Role Component": 0.06,
+    }
+    weighted_total = pd.Series(0.0, index=scout_df.index)
+    available_weight = pd.Series(0.0, index=scout_df.index)
+    for component, weight in weights.items():
+        values = pd.to_numeric(scout_df[component], errors="coerce")
+        weighted_total = weighted_total.add(values.fillna(0) * weight)
+        available_weight = available_weight.add(values.notna().astype(float) * weight)
+
+    scout_df["Scouting Score"] = weighted_total.divide(available_weight.where(available_weight > 0)).fillna(0)
+    scout_df["Sample Confidence"] = scout_df["Eligible Games"].apply(
+        lambda games: min(1.0, safe_divide(games, MIN_GAMES_FOR_MEANINGFUL_STATS))
+    )
+    scout_df["Scouting Score"] = scout_df["Scouting Score"] * (0.65 + (0.35 * scout_df["Sample Confidence"]))
+    scout_df["Scouting Score"] = scout_df["Scouting Score"].round(1)
+    scout_df["Scout Notes"] = scout_df.apply(scouting_note, axis=1)
+
+    scout_df = scout_df.sort_values(
+        ["Scouting Score", "Sample Status", "Rank Score", "Eligible Games"],
+        ascending=[False, True, False, False],
+    ).reset_index(drop=True)
+    scout_df["Tier"] = scout_df.index.map(lambda index: f"Tier {(index // SCOUT_TEAM_SIZE) + 1}")
+    scout_df["Tier Slot"] = scout_df.index.map(lambda index: (index % SCOUT_TEAM_SIZE) + 1)
+    return scout_df
+
+
+def render_tournament_tiers(rank_df, player_df, role_df, player_champion_df):
+    scout_df = build_tournament_scouting(rank_df, player_df, role_df, player_champion_df)
+    if scout_df.empty:
+        return
+
+    st.markdown("## Tournament Scout Tiers")
+    st.markdown(
+        f'<div class="section-note">Players are ranked into {SCOUT_TEAM_SIZE}-person scouting tiers using flex rank, '
+        f'overall win rate, KDA, carry score, damage, objectives, vision, survival, role strength, and champion pool. '
+        f'Performance metrics need {MIN_GAMES_FOR_MEANINGFUL_STATS} eligible games; lower samples are included as provisional so every player is accounted for.</div>',
+        unsafe_allow_html=True,
+    )
+
+    tier_summary_rows = []
+    for tier, tier_df in scout_df.groupby("Tier", sort=False):
+        tier_summary_rows.append(
+            {
+                "Tier": tier,
+                "Players": ", ".join(tier_df["Player"].tolist()),
+                "Avg Score": round(tier_df["Scouting Score"].mean(), 1),
+                "Ready Players": int((tier_df["Sample Status"] == "Ready").sum()),
+                "Role Spread": ", ".join(sorted(tier_df["Strongest Role"].dropna().unique().tolist())),
+            }
+        )
+    st.dataframe(pd.DataFrame(tier_summary_rows), use_container_width=True, hide_index=True)
+
+    for tier, tier_df in scout_df.groupby("Tier", sort=False):
+        st.markdown(f"### {tier}")
+        display_df = tier_df[
+            [
+                "Tier Slot",
+                "Player",
+                "Scouting Score",
+                "Sample Status",
+                "Eligible Games",
+                "Flex Rank",
+                "Strongest Role",
+                "Role WR %",
+                "Win Rate %",
+                "KDA",
+                "Carry Score / Game",
+                "Unique Champs",
+                "Meaningful Champs",
+                "Best Champion",
+                "Best Champion WR %",
+                "Scout Notes",
+            ]
+        ].copy()
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+    with st.expander("Scouting score component sheet"):
+        component_columns = [
+            "Player",
+            "Tier",
+            "Scouting Score",
+            "Rank Component",
+            "Win Rate Component",
+            "Carry Component",
+            "KDA Component",
+            "Damage Component",
+            "Objective Component",
+            "Vision Component",
+            "Survival Component",
+            "Champion Pool Component",
+            "Role Component",
+        ]
+        st.dataframe(scout_df[component_columns], use_container_width=True, hide_index=True)
+
+
 def render_records(results):
     player_df = results["player_df"]
     participant_df = results["participant_df"]
@@ -1821,6 +2147,7 @@ def render_records(results):
     render_awards(player_df)
     render_duo_section(participant_df)
     render_form_section(participant_df, match_df)
+    render_tournament_tiers(results["rank_df"], player_df, role_df, player_champion_df)
 
     st.markdown("## Player Summary")
     if meaningful_player_df.empty:
